@@ -43,8 +43,8 @@ Get it from [Releases](https://github.com/codemee/mathtran/releases/latest):
 |---|---|---|
 | Windows 10 / 11 (x64) | `MathTran-<version>-windows-x64.zip` | Unzip and run `MathTran.exe` |
 | macOS (Apple Silicon, M1 and later) | `MathTran-<version>-macos-arm64.dmg` | Open the DMG and drag MathTran into Applications |
-| macOS (Intel) | `MathTran-<version>-macos-x64.dmg` | Same as above |
 
+- Only an **Apple Silicon** (M1 and later) macOS package is provided; **on an Intel Mac use way B** (`uv tool install mathtran`)
 - The packages are **not code-signed** (the author has no paid developer certificate):
   - If Windows shows a SmartScreen warning, click "More info" → "Run anyway"
   - On macOS, the first time **right-click the app → "Open"**, or go to System Settings → Privacy & Security and click "Open Anyway"

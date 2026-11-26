@@ -12,7 +12,7 @@ flowchart TD
     META --> TEST["test<br/>Python 3.12 / 3.13 / 3.14<br/>(含實際編譯 LaTeX)"]
     META --> DIST["dist<br/>sdist + wheel<br/>twine check、模擬 uv tool install"]
     META --> WIN["build-windows<br/>PyInstaller → ZIP<br/>解壓縮後自我檢查"]
-    META --> MAC["build-macos（arm64 / x64）<br/>PyInstaller → DMG<br/>掛載後自我檢查"]
+    META --> MAC["build-macos（arm64）<br/>PyInstaller → DMG<br/>掛載後自我檢查"]
     TEST & DIST & WIN & MAC --> REL["release<br/>建立 GitHub Release<br/>附 ZIP / DMG / wheel / SHA256SUMS"]
     TEST & DIST & WIN & MAC --> PYPI["publish-pypi<br/>Trusted Publishing"]
 ```
@@ -61,7 +61,7 @@ flowchart TD
 | 項目 | Windows ZIP | macOS DMG |
 |---|---|---|
 | 程式 | `MathTran.exe` + `_internal/`（Python 與所有相依套件） | `MathTran.app` |
-| Tectonic | 附帶（使用者不必另外安裝） | 附帶（依架構分別是 arm64 / x64 版） |
+| Tectonic | 附帶（使用者不必另外安裝） | 附帶（Apple Silicon / arm64 版） |
 | 授權文件 | `LICENSE`、`THIRD_PARTY_NOTICES.md`、`TECTONIC_LICENSE.txt`、`SOURCE.txt` | 同左，放在 DMG 根目錄 |
 
 - 專案是 GPL-3.0-or-later，且相依 AGPL-3.0 的 PyMuPDF，**散布安裝包時必須附上授權全文並說明原始碼在哪裡**，所以建置腳本一定會放入上面的文件，其中 `SOURCE.txt` 指向該版本標籤對應的原始碼
@@ -100,6 +100,7 @@ dist\pyi\MathTran\MathTran.exe     # 結束代碼 0 = 通過，結果在 selftes
 ## 已知限制
 
 - **沒有程式碼簽章**：Windows 會出現 SmartScreen 警告；macOS 需要使用者手動允許（建置時只做 ad-hoc 簽章，讓 Apple Silicon 能執行）。要消除警告需要付費憑證（Windows Authenticode、Apple Developer ID 與公證）
+- **macOS 只打包 Apple Silicon（arm64）**，不再提供 Intel 版（Intel Mac 請用 `uv tool install mathtran`）。要加回來：在 `release.yml` 的 `build-macos` 矩陣加一行 `{ os: macos-15-intel, arch: x64, tectonic_target: x86_64-apple-darwin }`，並把發布說明的下載表加回那一列。`0.1.0` 當時有同時發布 Intel 版（`MathTran-0.1.0-macos-x64.dmg`），那個檔案仍留在該版的 Release 裡
 - **macOS 版沒有在實體 Mac 上測試過**，只有雲端的自動檢查（它不會開視窗，所以視窗本身、資料夾選擇、拖曳等互動沒有被驗證）
 - 安裝包約 100 MB 以上（含 Python 執行環境、PyMuPDF 與 Tectonic）
 - 安裝包沒有自動更新機制；新版本請重新下載（PyPI 版用 `uv tool upgrade mathtran`）

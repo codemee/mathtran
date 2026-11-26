@@ -136,7 +136,7 @@ jobs:
           path: dist/*.zip
           if-no-files-found: error
 
-  # ---------------------------------------------------------------- macOS DMG（Apple Silicon 與 Intel）
+  # ---------------------------------------------------------------- macOS DMG（只打包 Apple Silicon / arm64）
   build-macos:
     needs: meta
     strategy:
@@ -144,7 +144,9 @@ jobs:
       matrix:
         include:
           - { os: macos-latest,   arch: arm64, tectonic_target: aarch64-apple-darwin }
-          - { os: macos-15-intel, arch: x64,   tectonic_target: x86_64-apple-darwin }
+          # 不再打包 Intel 版。要加回來：在這裡加一行
+          #   - { os: macos-15-intel, arch: x64, tectonic_target: x86_64-apple-darwin }
+          # 並把下面發布說明的下載表那一列加回去。
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -219,9 +221,10 @@ jobs:
           |---|---|
           | Windows 10 / 11 (x64) | \`MathTran-$VERSION-windows-x64.zip\` — 解壓縮後執行 \`MathTran.exe\` |
           | macOS (Apple Silicon) | \`MathTran-$VERSION-macos-arm64.dmg\` |
-          | macOS (Intel) | \`MathTran-$VERSION-macos-x64.dmg\` |
           | Python (\`pip\` / \`uv\`) | \`uv tool install mathtran\` |
 
+          - 目前只提供 Apple Silicon（M1 以後）的 macOS 安裝包；Intel Mac 請改用 \`uv tool install mathtran\`（需自行安裝 Tectonic）。
+            Only an Apple Silicon (M1 and later) macOS package is provided; on an Intel Mac use \`uv tool install mathtran\` (Tectonic must be installed separately).
           - 安裝包已附帶 Tectonic，不必另外安裝；**第一次編譯需要連網**下載 LaTeX 套件（約數分鐘）。
             The packages bundle Tectonic; **the first compile needs the network** to fetch LaTeX packages (a few minutes).
           - 安裝包**沒有程式碼簽章**：Windows 可能出現 SmartScreen 警告（「其他資訊」→「仍要執行」）；

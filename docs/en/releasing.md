@@ -12,7 +12,7 @@ flowchart TD
     META --> TEST["test<br/>Python 3.12 / 3.13 / 3.14<br/>(really compiles LaTeX)"]
     META --> DIST["dist<br/>sdist + wheel<br/>twine check, simulated uv tool install"]
     META --> WIN["build-windows<br/>PyInstaller → ZIP<br/>self-test after unzipping"]
-    META --> MAC["build-macos (arm64 / x64)<br/>PyInstaller → DMG<br/>self-test after mounting"]
+    META --> MAC["build-macos (arm64)<br/>PyInstaller → DMG<br/>self-test after mounting"]
     TEST & DIST & WIN & MAC --> REL["release<br/>create the GitHub Release<br/>with ZIP / DMG / wheel / SHA256SUMS"]
     TEST & DIST & WIN & MAC --> PYPI["publish-pypi<br/>Trusted Publishing"]
 ```
@@ -61,7 +61,7 @@ If you push a tag before doing this, `publish-pypi` fails **but the GitHub Relea
 | Item | Windows ZIP | macOS DMG |
 |---|---|---|
 | Program | `MathTran.exe` + `_internal/` (Python and all dependencies) | `MathTran.app` |
-| Tectonic | Bundled (users install nothing) | Bundled (arm64 or x64 build, matching the architecture) |
+| Tectonic | Bundled (users install nothing) | Bundled (the Apple Silicon / arm64 build) |
 | License files | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `TECTONIC_LICENSE.txt`, `SOURCE.txt` | Same, at the root of the DMG |
 
 - The project is GPL-3.0-or-later and depends on the AGPL-3.0 PyMuPDF, so **a distributed package must carry the license texts and say where the source is**. The build script always adds the files above, and `SOURCE.txt` points to the source for that exact tag
@@ -100,6 +100,7 @@ dist\pyi\MathTran\MathTran.exe     # exit code 0 = passed, result in selftest.js
 ## Known limitations
 
 - **No code signing**: Windows shows a SmartScreen warning; macOS needs the user to allow it manually (the build only ad-hoc signs, so Apple Silicon can run it). Removing the warnings needs paid certificates (Windows Authenticode, Apple Developer ID plus notarization)
+- **macOS is packaged for Apple Silicon (arm64) only**; there is no Intel build any more (on an Intel Mac use `uv tool install mathtran`). To bring it back, add `{ os: macos-15-intel, arch: x64, tectonic_target: x86_64-apple-darwin }` to the `build-macos` matrix in `release.yml` and restore that row of the download table in the release notes. `0.1.0` did ship an Intel build (`MathTran-0.1.0-macos-x64.dmg`), which stays on that version's Release
 - **The macOS build has not been tried on a real Mac**, only by CI's automatic checks (which open no window, so the window itself, folder pickers and drag and drop are not verified)
 - The packages are 100 MB or more (they include the Python runtime, PyMuPDF and Tectonic)
 - There is no auto-update; download new versions again (for the PyPI version use `uv tool upgrade mathtran`)

@@ -43,8 +43,8 @@
 |---|---|---|
 | Windows 10 / 11（x64） | `MathTran-<版本>-windows-x64.zip` | 解壓縮，執行 `MathTran.exe` |
 | macOS（Apple Silicon，M1 以後） | `MathTran-<版本>-macos-arm64.dmg` | 開啟 DMG，把 MathTran 拖進「應用程式」 |
-| macOS（Intel） | `MathTran-<版本>-macos-x64.dmg` | 同上 |
 
+- 目前只提供 **Apple Silicon**（M1 以後）的 macOS 安裝包；**Intel Mac 請改用方式 B**（`uv tool install mathtran`）
 - 安裝包**沒有程式碼簽章**（作者沒有付費的開發者憑證）：
   - Windows 出現 SmartScreen 警告時，按「其他資訊」→「仍要執行」
   - macOS 第一次請在 App 上按**右鍵 →「打開」**，或到「系統設定 → 隱私權與安全性」按「仍要打開」
