@@ -36,6 +36,7 @@ def _call(base: str, path: str, body: dict | None = None, timeout: int = 600) ->
 def run(result_path: str | Path) -> int:
     import uvicorn
 
+    from . import APP_TITLE, UNKNOWN_VERSION
     from .core import render
     from .desktop import _free_port
     from .server import app
@@ -62,8 +63,14 @@ def run(result_path: str | Path) -> int:
         if frozen:   # 打包版必須用安裝包附帶的 tectonic，不能靠系統上剛好有裝
             check("bundled_tectonic", render.bundled_tectonic() is not None, str(render.bundled_tectonic()))
 
+        # 版本號必須讀得到（打包版要有 copy_metadata 帶進去的套件資訊），而且標題列 / 網頁標題要顯示它
+        version = health.get("version", "")
+        check("version", bool(version) and version != UNKNOWN_VERSION, version)
+        check("window_title_has_version", APP_TITLE == f"MathTran {version}", APP_TITLE)
+
         code, body = _call(base, "/")
         check("index_page", code == 200 and b"MathTran" in body and b'id="toolbar"' in body, f"HTTP {code}")
+        check("page_title_has_version", f"<title>{APP_TITLE}</title>".encode() in body, APP_TITLE)
         for path in ("/vendor/katex.min.js", "/vendor/katex.min.css",
                      "/vendor/fonts/KaTeX_Main-Regular.woff2", "/icon.svg"):
             code, body = _call(base, path)

@@ -12,7 +12,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
 
 ROOT = Path(SPECPATH).parent
 SRC = ROOT / "src"
@@ -27,6 +27,9 @@ datas = [
     (str(SRC / "mathtran" / "icon.ico"), "mathtran"),       # 視窗圖示（Windows）
 ]
 datas += collect_data_files("anthropic")                    # SDK 的型別 / 資料檔
+# 版本號（標題列顯示 "MathTran 0.1.1"）是從「已安裝套件的資訊」讀的，打包時要一起帶進去，
+# 否則打包後的程式讀不到版本、標題會少掉版本號（自我檢查會抓這件事）
+datas += copy_metadata("mathtran")
 
 # 這些套件是靠字串在執行時才載入的，PyInstaller 看不出來，要明確列出
 hiddenimports = []

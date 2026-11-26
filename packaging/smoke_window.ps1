@@ -8,7 +8,8 @@
     1. 把 ZIP 解壓縮到暫存資料夾
     2. 替每個檔案加上「來自網際網路」標記（Zone.Identifier，ZoneId=3），就像瀏覽器下載的 ZIP 被檔案總管解壓縮
     3. 直接啟動 MathTran.exe（CreateProcess；不經過 shell，才不會跳出「無法驗證發行者」的對話框而卡住）
-    4. 等視窗標題變成 "MathTran"；如果出現 "Unhandled exception" 之類的錯誤視窗、程式提早結束、或逾時，就失敗
+    4. 等視窗標題變成 "MathTran <版本號>"（例如 "MathTran 0.1.1"，必須帶版本號）；
+       如果出現 "Unhandled exception" 之類的錯誤視窗、程式提早結束、或逾時，就失敗
   結束代碼：0 = 視窗正常開啟，1 = 失敗。
 
 .EXAMPLE
@@ -46,13 +47,13 @@ for ($i = 0; $i -lt $TimeoutSeconds; $i++) {
   $proc.Refresh()
   if ($proc.HasExited) { Write-Host "程式提早結束，結束代碼 $($proc.ExitCode)"; break }
   $title = $proc.MainWindowTitle
-  if ($title -eq "MathTran") { $ok = $true; break }
+  if ($title -match '^MathTran \d') { $ok = $true; break }   # 標題列要有版本號；"MathTran" 單獨出現表示讀不到版本
   if ($title -match "Unhandled|exception|Error") { break }
 }
 Write-Host "視窗標題：'$title'  已結束：$($proc.HasExited)"
 if (-not $proc.HasExited) {
   # 視窗出現後再多等幾秒，確認沒有隨後跳出錯誤視窗（錯誤視窗屬於同一個行程，標題會被換掉）
-  if ($ok) { Start-Sleep -Seconds 5; $proc.Refresh(); $title = $proc.MainWindowTitle; if ($title -ne "MathTran") { $ok = $false; Write-Host "視窗標題後來變成 '$title'" } }
+  if ($ok) { Start-Sleep -Seconds 5; $proc.Refresh(); $title = $proc.MainWindowTitle; if ($title -notmatch '^MathTran \d') { $ok = $false; Write-Host "視窗標題後來變成 '$title'" } }
   Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
 }
 Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue

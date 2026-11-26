@@ -82,7 +82,7 @@ flowchart TD
 
 修法是在 exe 旁邊附一個 [`MathTran.exe.config`](https://github.com/codemee/mathtran/blob/main/packaging/MathTran.exe.config)（`loadFromRemoteSources`），由 `build_dist.py` 放進 ZIP。
 
-[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) 會模擬使用者的做法：解壓縮 → **替每個檔案加上標記**（`Zone.Identifier`，ZoneId=3）→ 真的開視窗 → 等視窗標題變成 `MathTran`；出現 `Unhandled exception` 視窗、提早結束或逾時就失敗。雲端的 `build-windows` 會執行它；本機也可以跑：
+[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) 會模擬使用者的做法：解壓縮 → **替每個檔案加上標記**（`Zone.Identifier`，ZoneId=3）→ 真的開視窗 → 等視窗標題變成 `MathTran <版本號>`（例如 `MathTran 0.1.1`，沒有版本號就算失敗，這樣也順便確認打包時有帶進套件的版本資訊）；出現 `Unhandled exception` 視窗、提早結束或逾時就失敗。雲端的 `build-windows` 會執行它；本機也可以跑：
 
 ```powershell
 pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<版本>-windows-x64.zip           # 帶標記（應該通過）

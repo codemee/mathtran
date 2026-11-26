@@ -14,6 +14,7 @@ from pathlib import Path
 import uvicorn
 import webview
 
+from . import APP_TITLE
 from .server import app
 
 
@@ -84,7 +85,7 @@ class Api:
         return {"dir": str(folder), "count": len(names), "names": names}
 
 
-TITLE = "MathTran"
+TITLE = APP_TITLE   # 標題列顯示版本號（例如 "MathTran 0.1.1"）；設定圖示、截圖也用這個字串找視窗
 ICON_PATH = Path(__file__).parent / "icon.ico"
 
 

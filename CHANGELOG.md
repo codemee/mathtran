@@ -3,6 +3,20 @@
 格式依循 [Keep a Changelog](https://keepachangelog.com/)；版本號採 [語意化版本](https://semver.org/lang/zh-TW/)。
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.1.2] - 2026-11-26
+
+### 繁體中文
+
+- 視窗標題列顯示版本號（例如 `MathTran 0.1.1`）；瀏覽器版的分頁標題與 `/api/health` 也有版本號
+- 程式圖示改為「瘦窄的白色文件（右上角有摺角）上壓一條紅色橫向長條，長條裡是白色粗體 f(x)」（像 PDF 圖示）；紅色長條是純色、沒有白邊，夠高，f(x) 可以放得很大，小尺寸也看得清楚；白色文件當底，在深色工作列上也清楚，淡灰藍的邊線讓它在白色背景上也有輪廓
+
+### English
+
+- The window title bar now shows the version (for example `MathTran 0.1.1`); the browser tab title and `/api/health` carry it too
+- The app icon is now a slim white document with a folded corner, with a red horizontal bar across it (like a PDF icon) that holds a bold white f(x); the bar is solid red with no white border and tall enough for a large f(x) that stays readable at small sizes; the white page keeps it clear on dark taskbars, and a pale grey-blue edge gives it an outline on white backgrounds
+
 ## [0.1.1] - 2026-11-26
 
 修正 Windows 安裝包的啟動問題。 / Fixes the Windows package failing to start.
@@ -51,5 +65,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.2]: https://github.com/codemee/mathtran/releases/tag/v0.1.2
 [0.1.1]: https://github.com/codemee/mathtran/releases/tag/v0.1.1
 [0.1.0]: https://github.com/codemee/mathtran/releases/tag/v0.1.0

@@ -82,7 +82,7 @@ The self-test **opens no window**, so it cannot catch problems at the window lev
 
 The fix is a [`MathTran.exe.config`](https://github.com/codemee/mathtran/blob/main/packaging/MathTran.exe.config) (`loadFromRemoteSources`) next to the exe, which `build_dist.py` puts into the ZIP.
 
-[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) imitates what a user does: extract → **mark every file** (`Zone.Identifier`, ZoneId=3) → really open the window → wait for the window title to become `MathTran`; an `Unhandled exception` window, an early exit or a timeout fails it. CI's `build-windows` runs it, and you can run it locally too:
+[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) imitates what a user does: extract → **mark every file** (`Zone.Identifier`, ZoneId=3) → really open the window → wait for the window title to become `MathTran <version>` (for example `MathTran 0.1.1`; a title without the version fails, which also confirms the package metadata was bundled); an `Unhandled exception` window, an early exit or a timeout fails it. CI's `build-windows` runs it, and you can run it locally too:
 
 ```powershell
 pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<version>-windows-x64.zip           # marked (should pass)

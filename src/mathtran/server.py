@@ -6,16 +6,17 @@ import re
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from . import APP_NAME, APP_TITLE, __version__
 from .core import batch, cache, config, i18n, ocr, render
 from .core.i18n import tr
 
 WEB_DIR = Path(__file__).parent / "web"
 
-app = FastAPI(title="MathTran")
+app = FastAPI(title=APP_NAME, version=__version__)
 
 
 class LangMiddleware:
@@ -79,6 +80,7 @@ def health():
     return {
         "api_key": bool(config.get_api_key()),
         "tectonic": render.tectonic_available(),   # 含安裝包附帶的 tectonic
+        "version": __version__,
     }
 
 
@@ -183,7 +185,10 @@ def api_export(fmt: str, body: LatexIn):
 
 @app.get("/")
 def index():
-    return FileResponse(WEB_DIR / "index.html")
+    # 瀏覽器分頁標題也顯示版本號（桌面視窗的標題由 desktop.py 設定，用同一個 APP_TITLE）
+    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    html = html.replace(f"<title>{APP_NAME}</title>", f"<title>{APP_TITLE}</title>", 1)
+    return HTMLResponse(html)
 
 
 @app.get("/icon.svg")
