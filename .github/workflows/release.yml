@@ -1,0 +1,261 @@
+name: Release
+
+# 推送 v* 標籤時：測試 → 建置 Windows ZIP / macOS DMG / Python 套件 → 建立 GitHub Release → 上傳 PyPI。
+# 手動執行（Run workflow）只會「建置與測試」並把成品留在這次執行的 Artifacts，不會發布任何東西。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TECTONIC_VERSION: "0.17.0"   # 安裝包附帶的 Tectonic 版本
+  BUILD_PYTHON: "3.13"         # 打包 Windows / macOS 安裝包用的 Python
+
+jobs:
+  # ---------------------------------------------------------------- 版本檢查
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        shell: bash
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::標籤 $GITHUB_REF_NAME 和 pyproject.toml 的版本 v$version 不一致，請先修正再重新打標籤"
+            exit 1
+          fi
+          # 含 a / b / rc / dev 的版本（例如 0.2.0rc1）標成 pre-release
+          if [[ "$version" =~ (a|b|rc|dev)[0-9]*$ ]]; then pre=true; else pre=false; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$pre" >> "$GITHUB_OUTPUT"
+          echo "版本：$version（pre-release: $pre）"
+
+  # ---------------------------------------------------------------- 測試（Python 3.12 ~ 3.14）
+  test:
+    needs: meta
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 安裝 Tectonic 與中文字型（測試會實際編譯 LaTeX）
+        run: |
+          curl -fsSL -o tectonic.tar.gz \
+            "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          mkdir -p "$HOME/bin" && tar -xzf tectonic.tar.gz -C "$HOME/bin" tectonic && chmod +x "$HOME/bin/tectonic"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk fontconfig
+      - run: uv sync --python ${{ matrix.python }}
+      - run: uv run pytest -q
+
+  # ---------------------------------------------------------------- Python 套件（sdist + wheel）
+  dist:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: "3.13"
+      - run: uv build --out-dir dist
+      - name: 檢查中繼資料與 README 能在 PyPI 上正常顯示
+        run: uvx twine check --strict dist/*
+      - name: 檢查 wheel 內容（網頁、離線 KaTeX、圖示、授權檔都要在裡面）
+        run: |
+          python3 - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          need = ["mathtran/web/index.html", "mathtran/web/vendor/katex.min.js", "mathtran/web/vendor/katex.min.css",
+                  "mathtran/web/vendor/fonts/KaTeX_Main-Regular.woff2", "mathtran/web/vendor/LICENSE-KaTeX.txt",
+                  "mathtran/icon.ico", "mathtran/core/i18n.py"]
+          missing = [n for n in need if n not in names]
+          assert not missing, f"wheel 缺少檔案：{missing}"
+          assert any(n.endswith("licenses/LICENSE") for n in names), "wheel 缺少 LICENSE"
+          print("wheel OK，共", len(names), "個檔案")
+          PY
+      - name: 模擬使用者安裝（uv tool install，最低支援的 Python 3.12）
+        run: |
+          uv tool install --python 3.12 dist/*.whl
+          "$(uv tool dir --bin)/mathtran" --help
+          "$(uv tool dir)/mathtran/bin/python" -c "from mathtran.server import WEB_DIR; assert (WEB_DIR/'index.html').is_file(); print('web assets OK')"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-dist
+          path: dist/
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- Windows ZIP
+  build-windows:
+    needs: meta
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: ${{ env.BUILD_PYTHON }}
+      - name: 下載 Tectonic（隨安裝包附帶）
+        shell: pwsh
+        run: |
+          $base = "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40$env:TECTONIC_VERSION"
+          Invoke-WebRequest "$base/tectonic-$env:TECTONIC_VERSION-x86_64-pc-windows-msvc.zip" -OutFile tectonic.zip
+          Expand-Archive tectonic.zip -DestinationPath tectonic-bin
+          Invoke-WebRequest "https://raw.githubusercontent.com/tectonic-typesetting/tectonic/tectonic%40$env:TECTONIC_VERSION/LICENSE" -OutFile TECTONIC_LICENSE.txt
+          "TECTONIC_BIN=$PWD\tectonic-bin\tectonic.exe" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "TECTONIC_LICENSE=$PWD\TECTONIC_LICENSE.txt" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      - run: uv sync --python ${{ env.BUILD_PYTHON }}
+      - run: uv run python packaging/build_dist.py
+      - name: 自我檢查「解壓縮後的 ZIP」（不開視窗；PATH 清掉，確保用的是附帶的 Tectonic）
+        shell: pwsh
+        run: |
+          $zip = (Get-ChildItem dist\MathTran-*-windows-x64.zip).FullName
+          Expand-Archive $zip -DestinationPath "$env:RUNNER_TEMP\unzipped"
+          $env:MATHTRAN_SELFTEST = "$PWD\selftest.json"
+          $env:PATH = "C:\Windows\System32;C:\Windows"
+          $p = Start-Process "$env:RUNNER_TEMP\unzipped\MathTran\MathTran.exe" -PassThru -Wait -WindowStyle Hidden
+          Get-Content selftest.json
+          if ($p.ExitCode -ne 0) { throw "打包後的程式自我檢查失敗（結束代碼 $($p.ExitCode)）" }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- macOS DMG（Apple Silicon 與 Intel）
+  build-macos:
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest,   arch: arm64, tectonic_target: aarch64-apple-darwin }
+          - { os: macos-15-intel, arch: x64,   tectonic_target: x86_64-apple-darwin }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: ${{ env.BUILD_PYTHON }}
+      - name: 下載 Tectonic（隨安裝包附帶）
+        run: |
+          base="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}"
+          curl -fsSL -o tectonic.tar.gz "$base/tectonic-${TECTONIC_VERSION}-${{ matrix.tectonic_target }}.tar.gz"
+          mkdir tectonic-bin && tar -xzf tectonic.tar.gz -C tectonic-bin && chmod +x tectonic-bin/tectonic
+          curl -fsSL -o TECTONIC_LICENSE.txt "https://raw.githubusercontent.com/tectonic-typesetting/tectonic/tectonic%40${TECTONIC_VERSION}/LICENSE"
+          echo "TECTONIC_BIN=$PWD/tectonic-bin/tectonic" >> "$GITHUB_ENV"
+          echo "TECTONIC_LICENSE=$PWD/TECTONIC_LICENSE.txt" >> "$GITHUB_ENV"
+          file tectonic-bin/tectonic
+      - run: uv sync --python ${{ env.BUILD_PYTHON }}
+      - run: uv run python packaging/build_dist.py
+      - name: 驗證 DMG，並自我檢查 DMG 裡的 App（不開視窗；PATH 清掉，確保用的是附帶的 Tectonic）
+        run: |
+          hdiutil verify dist/MathTran-*.dmg
+          mnt="$(mktemp -d)"
+          hdiutil attach dist/MathTran-*.dmg -mountpoint "$mnt" -nobrowse -quiet
+          ls -la "$mnt"
+          set +e
+          env -i HOME="$HOME" PATH="/usr/bin:/bin" MATHTRAN_SELFTEST="$PWD/selftest.json" "$mnt/MathTran.app/Contents/MacOS/MathTran"
+          code=$?
+          set -e
+          cat selftest.json || true
+          hdiutil detach "$mnt" -quiet || true
+          exit $code
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-macos-${{ matrix.arch }}
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- GitHub Release（只有推送標籤時）
+  release:
+    needs: [meta, test, dist, build-windows, build-macos]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: 整理檔案與校驗碼
+        run: |
+          ls -la artifacts
+          (cd artifacts && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+      - name: 產生 Release 說明（取自 CHANGELOG.md 對應版本的段落）
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { on=1; next }
+            on && /^## \[/ { exit }
+            on && /^\[[0-9].*\]: / { next }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "MathTran $VERSION" > notes.md
+          cat >> notes.md <<EOF
+
+          ---
+
+          ### 下載 / Downloads
+
+          | 平台 Platform | 檔案 File |
+          |---|---|
+          | Windows 10 / 11 (x64) | \`MathTran-$VERSION-windows-x64.zip\` — 解壓縮後執行 \`MathTran.exe\` |
+          | macOS (Apple Silicon) | \`MathTran-$VERSION-macos-arm64.dmg\` |
+          | macOS (Intel) | \`MathTran-$VERSION-macos-x64.dmg\` |
+          | Python (\`pip\` / \`uv\`) | \`uv tool install mathtran\` |
+
+          - 安裝包已附帶 Tectonic，不必另外安裝；**第一次編譯需要連網**下載 LaTeX 套件（約數分鐘）。
+            The packages bundle Tectonic; **the first compile needs the network** to fetch LaTeX packages (a few minutes).
+          - 安裝包**沒有程式碼簽章**：Windows 可能出現 SmartScreen 警告（「其他資訊」→「仍要執行」）；
+            macOS 第一次請在 App 上按右鍵 →「打開」，或到「系統設定 → 隱私權與安全性」允許。
+            The builds are **not code-signed**: Windows may show a SmartScreen warning ("More info" → "Run anyway"); on macOS right-click the app → "Open" the first time.
+          - macOS 版由雲端打包並做自動檢查，作者沒有在實體 Mac 上測試過。
+            The macOS builds are produced and smoke-tested in CI only; the author has not tried them on real Mac hardware.
+          - 授權：GPL-3.0-or-later（含 PyMuPDF 的 AGPL-3.0 義務），詳見安裝包內的 \`LICENSE\`、\`THIRD_PARTY_NOTICES.md\`、\`SOURCE.txt\`。
+          EOF
+          cat notes.md
+      - name: 建立 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.meta.outputs.version }}
+          PRERELEASE: ${{ needs.meta.outputs.prerelease }}
+        run: |
+          flags=""
+          [[ "$PRERELEASE" == "true" ]] && flags="--prerelease"
+          gh release create "$GITHUB_REF_NAME" artifacts/* \
+            --title "MathTran $VERSION" --notes-file notes.md --verify-tag $flags
+
+  # ---------------------------------------------------------------- PyPI（只有推送標籤時；Trusted Publishing，不需要密碼或 token）
+  publish-pypi:
+    needs: [meta, test, dist, build-windows, build-macos]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/mathtran/${{ needs.meta.outputs.version }}/
+    permissions:
+      id-token: write   # Trusted Publishing 用：向 PyPI 證明「這是 codemee/mathtran 的 release.yml 在發布」
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

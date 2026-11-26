@@ -1,14 +1,31 @@
 [project]
 name = "mathtran"
 version = "0.1.0"
-description = "Image math formula to LaTeX, with SVG/PDF export (CLI, web, desktop)"
+description = "Image math formula to LaTeX, with live preview and SVG / PDF / .tex export (CLI, web and desktop app)"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+# 只放名稱、不放電子郵件：發布到 PyPI 後這裡的資訊會公開顯示
 authors = [
-    { name = "meebox", email = "meebox@gmail.com" }
+    { name = "codemee" }
 ]
-requires-python = ">=3.14"
+keywords = ["latex", "ocr", "math", "formula", "svg", "pdf", "tectonic", "claude"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
+requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.14.0",
     "fastapi>=0.165.0",
@@ -21,6 +38,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/codemee/mathtran"
+Source = "https://github.com/codemee/mathtran"
+Changelog = "https://github.com/codemee/mathtran/blob/main/CHANGELOG.md"
 Issues = "https://github.com/codemee/mathtran/issues"
 
 [project.scripts]
@@ -34,5 +53,6 @@ build-backend = "uv_build"
 dev = [
     "httpx>=0.28.1",
     "pillow>=13.0.0",
+    "pyinstaller>=6.22.3",
     "pytest>=9.2.0",
 ]

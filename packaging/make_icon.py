@@ -1,8 +1,9 @@
-"""產生 App 圖示：藍色 f(x) 上面壓一條紅色 PDF 橫條（透明底）。
+"""產生 App 圖示：左上為圓角框內的藍色 f(x)，右下為紅色 PDF 橫條（透明底，接近正方形）。
 
 輸出：
   src/mathtran/web/icon.svg   網頁 favicon（文字已轉外框）
   src/mathtran/icon.ico       桌面視窗 / 打包 exe 圖示（16~256 多尺寸）
+  src/mathtran/icon.icns      macOS .app 圖示（16~1024）
   docs/images/icon.png        文件用預覽圖
 
 用法：uv run python packaging/make_icon.py
@@ -23,25 +24,34 @@ RED = (0.90, 0.22, 0.21)
 
 
 def build_page() -> tuple[pymupdf.Document, pymupdf.Page]:
-    """透明底；藍色 f(x) 上面壓一條紅色 PDF 橫條。"""
+    """透明底；左上是框起來的藍色 f(x)，右下是紅色 PDF 橫條，整體排成接近正方形。"""
     doc = pymupdf.open()
     page = doc.new_page(width=SIZE, height=SIZE)
 
-    # f(x)（Times 粗斜體），藍色在亮 / 暗背景都看得清楚
-    text = "f(x)"
-    size = 136
+    # 左上：不填色的圓角框 + 藍色 f(x)（Times 粗斜體）。藍色在亮 / 暗背景都看得清楚
+    frame = pymupdf.Rect(12, 12, 178, 132)
+    sh = page.new_shape()
+    sh.draw_rect(frame, radius=0.22)
+    sh.finish(fill=None, color=BLUE, width=10)   # fill=None → 不填色
+    sh.commit()
+    text, size = "f(x)", 78
     width = pymupdf.get_text_length(text, fontname="tibi", fontsize=size)
-    page.insert_text(((SIZE - width) / 2, 152), text, fontname="tibi", fontsize=size, color=BLUE)
+    page.insert_text(
+        (frame.x0 + (frame.width - width) / 2, 90), text, fontname="tibi", fontsize=size, color=BLUE
+    )
 
-    # 紅色 PDF 橫條，壓在 f(x) 下半部
-    bar = pymupdf.Rect(16, 136, 240, 208)
+    # 右下：紅色 PDF 橫條，大幅壓在框的右下角上（白邊把兩者分開），
+    # 疊得夠多，兩者看起來才是同一個圖示而不是分開的兩個東西
+    bar = pymupdf.Rect(78, 102, 244, 226)
     sh = page.new_shape()
     sh.draw_rect(bar, radius=0.22)
-    sh.finish(fill=RED, color=WHITE, width=5)
+    sh.finish(fill=RED, color=WHITE, width=6)
     sh.commit()
-    tw = pymupdf.get_text_length("PDF", fontname="hebo", fontsize=52)
+    fs = 54
+    tw = pymupdf.get_text_length("PDF", fontname="hebo", fontsize=fs)
     page.insert_text(
-        ((SIZE - tw) / 2, bar.y0 + 52), "PDF", fontname="hebo", fontsize=52, color=WHITE
+        (bar.x0 + (bar.width - tw) / 2, bar.y0 + (bar.height + fs * 0.72) / 2),
+        "PDF", fontname="hebo", fontsize=fs, color=WHITE,
     )
     return doc, page
 
@@ -75,6 +85,17 @@ def main() -> None:
     write_ico(
         ROOT / "src/mathtran/icon.ico",
         {s: png_at(page, s) for s in (16, 24, 32, 48, 64, 128, 256)},
+    )
+    # macOS 的 .app 圖示（.icns）：從向量原稿直接畫 1024px 再縮小，Retina 螢幕才清楚
+    import io
+
+    from PIL import Image
+
+    big = Image.open(io.BytesIO(png_at(page, 1024))).convert("RGBA")
+    big.save(
+        ROOT / "src/mathtran/icon.icns",
+        format="ICNS",
+        sizes=[(16, 16), (32, 32), (64, 64), (128, 128), (256, 256), (512, 512), (1024, 1024)],
     )
     print("icon generated")
 

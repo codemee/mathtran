@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import base64
+import io
 import socket
 import sys
 import threading
 import time
+import zipfile
 from pathlib import Path
 
 import uvicorn
@@ -19,6 +21,33 @@ def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+def _unique_path(path: Path) -> Path:
+    """檔案已存在就改成「名稱 (2).副檔名」，避免覆蓋使用者的檔案。"""
+    if not path.exists():
+        return path
+    n = 2
+    while (candidate := path.with_name(f"{path.stem} ({n}){path.suffix}")).exists():
+        n += 1
+    return candidate
+
+
+def extract_zip(data: bytes, folder: Path) -> list[str]:
+    """把 zip 內的檔案解到 folder，回傳實際寫入的檔名。
+
+    只取檔名（避免 ../ 路徑穿越），已存在的檔案不覆蓋（改名為「名稱 (2)」）。
+    """
+    names = []
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        for member in zf.namelist():
+            name = Path(member).name
+            if not name:
+                continue
+            target = _unique_path(folder / name)
+            target.write_bytes(zf.read(member))
+            names.append(target.name)
+    return names
 
 
 class Api:
@@ -45,8 +74,17 @@ class Api:
         path.write_bytes(base64.b64decode(data_b64))
         return str(path)
 
+    def save_zip_to_folder(self, zip_b64: str) -> dict | None:
+        """批次匯出：讓使用者選資料夾，把 zip 內的檔案解開放進去（不覆蓋既有檔案）。"""
+        result = self._window.create_file_dialog(webview.FileDialog.FOLDER)
+        if not result:
+            return None
+        folder = Path(result if isinstance(result, str) else result[0])
+        names = extract_zip(base64.b64decode(zip_b64), folder)
+        return {"dir": str(folder), "count": len(names), "names": names}
 
-TITLE = "Mathtran"
+
+TITLE = "MathTran"
 ICON_PATH = Path(__file__).parent / "icon.ico"
 
 

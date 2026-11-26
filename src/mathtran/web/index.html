@@ -3,180 +3,1005 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mathtran</title>
+<title>MathTran</title>
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="stylesheet" href="/vendor/katex.min.css">
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --fg:#1d2230; --muted:#6b7385; --accent:#2f6fed; --line:#dfe3ea; --err:#c62828; }
+  /* ===== 配色 =====
+     淺色：鋼彈 RX-78-2 —— 白色機身、胸口與手臂的藍、紅色點綴、黃色 V 字天線
+     深色：新世紀福音戰士 —— 初號機的紫、螢光綠，加上 NERV 的橘與紅
+     （只借用配色，沒有使用任何標誌或圖案。）
+     --accent        文字 / 外框 / 連結用的強調色（要在卡片底色上看得清楚）
+     --accent-solid  實心按鈕與勾選框的底色（配 --on-accent 的字）
+     「跟隨系統」時由 prefers-color-scheme 決定；手動選擇時用 <html data-theme="light|dark"> 覆寫。 */
+  :root { color-scheme: light dark;
+          --bg:#eef1f6; --card:#ffffff; --fg:#16233a; --muted:#5d6b82; --line:#d5dce8;
+          --accent:#1d4fa8; --accent-solid:#1d4fa8; --on-accent:#ffffff;
+          --err:#c8202b; --err-solid:#d7262c; --ok:#216a3f; --cache:#0b6479; --edit:#8a5600; --sel:#e3ebf8; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#14171f; --card:#1d2230; --fg:#e6e9f0; --muted:#8c94a8; --accent:#6c9bff; --line:#2d3446; --err:#ff8a80; }
+    :root:not([data-theme="light"]) {
+          --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
+          --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
+          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42; }
   }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark;
+          --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
+          --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
+          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42; }
+
   * { box-sizing:border-box }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,"Microsoft JhengHei",sans-serif }
-  header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--line) }
-  h1 { font-size:18px; margin:0 }
-  #status { color:var(--muted); font-size:13px }
-  main { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px 20px }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,"Microsoft JhengHei",sans-serif; padding-bottom:44px }
+  /* 工具列：靠右的三個圖示按鈕（語言、配色、API key） */
+  #toolbar { display:flex; justify-content:flex-end; align-items:center; gap:2px; padding:4px 20px 0 }
+  .tb { position:relative; width:30px; height:30px; padding:0; border-radius:9px; background:transparent; color:var(--fg);
+        display:inline-grid; place-items:center; border:0 }
+  .tb:hover { background:color-mix(in srgb, var(--accent) 14%, transparent) }
+  .tb svg { width:18px; height:18px; display:block }
+  .tb .tbtxt { font-size:14px; font-weight:800; letter-spacing:-.3px }
+  .tb .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--err-solid); border:1.5px solid var(--bg) }
+  main { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding:6px 20px 16px }
   @media (max-width:800px) { main { grid-template-columns:1fr } }
-  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px }
-  h2 { font-size:14px; margin:0; color:var(--muted); font-weight:600 }
-  #drop { border:2px dashed var(--line); border-radius:8px; min-height:220px; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); padding:10px; cursor:pointer }
-  #drop.over { border-color:var(--accent) }
-  #drop img { max-width:100%; max-height:320px }
-  textarea { width:100%; min-height:130px; font:14px/1.4 ui-monospace,Consolas,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; resize:vertical }
-  #preview { min-height:120px; display:flex; align-items:center; justify-content:center; overflow:auto; font-size:1.3em; padding:8px }
-  #preview img { width:100%; max-height:200px; object-fit:contain }
-  .row { display:flex; gap:8px; flex-wrap:wrap }
-  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; min-width:0 }
+  h2 { font-size:15px; margin:0; color:var(--fg); font-weight:700; display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  /* 步驟編號：漸層圓形徽章 */
+  .step { flex:none; width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; color:#fff;
+          font-size:14px; font-weight:800; line-height:1; background:var(--accent-solid) }
+  h2 .hint { font-weight:400 }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .row.between { justify-content:space-between }
+  button.small { padding:4px 11px; font-size:13px }
+  .lbl { color:var(--muted); font-size:13px }
+  .hint { color:var(--muted); font-size:12px }
+  button { background:var(--accent-solid); color:var(--on-accent); border:0; border-radius:8px; padding:7px 13px; font:inherit; cursor:pointer }
   button.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent) }
-  button:disabled { opacity:.5; cursor:wait }
-  body { padding-bottom:44px }
+  button.link { background:none; color:var(--accent); padding:2px 4px; font-size:13px }
+  button.danger { background:var(--err-solid); color:#fff }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+  #cacheInfo code { font-size:12px; word-break:break-all; color:var(--muted) }
+  button:disabled { opacity:.45; cursor:not-allowed }
+  button[hidden] { display:none }
+  label.chk { display:inline-flex; gap:5px; align-items:center; font-size:13px; cursor:pointer }
+  input[type=checkbox] { accent-color:var(--accent-solid) }
+  /* 圖片清單 */
+  #list { border:2px dashed var(--line); border-radius:8px; min-height:240px; max-height:calc(100vh - 372px); overflow:auto; outline:none; padding:6px }
+  .zoom { display:inline-flex; gap:6px; align-items:center; margin-left:auto; font-size:12px; color:var(--muted) }
+  .zoom input { width:90px }
+  #list:focus-visible { border-color:var(--accent) }
+  body.dragging #list { border-color:var(--accent); background:var(--sel) }
+  #empty { color:var(--muted); text-align:center; padding:60px 12px; font-size:14px }
+  /* 看圖程式風格：縮圖格狀排列，圖片完整顯示；勾選框、狀態標籤疊在圖片上，檔名是圖片下方的簡潔說明列 */
+  #list.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(var(--thumb,170px), 1fr)); gap:10px; align-content:start }
+  /* 高度直接指定：aspect-ratio 在 grid 裡不會被列高計算採用，會造成卡片互相重疊（圖片區 4:3 + 28px 說明列） */
+  .item { position:relative; height:calc(var(--thumb, 170px) * .75 + 28px); display:flex; flex-direction:column; cursor:pointer;
+          border-radius:10px; overflow:hidden; background:var(--card); border:1px solid var(--line); transition:border-color .12s, box-shadow .12s }
+  .item:hover { border-color:color-mix(in srgb, var(--accent) 55%, var(--line)) }
+  .item.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) }
+  .item .imgbox { flex:1; min-height:0; background:#fff; position:relative }
+  .item img.thumb { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:6px }
+  .item .nm { flex:none; height:28px; line-height:27px; padding:0 10px; font-size:12px; color:var(--muted);
+              white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1px solid var(--line); background:var(--card) }
+  .item.sel .nm { color:var(--fg) }
+  /* 扁平風格的勾選框 */
+  .item .rowchk { appearance:none; -webkit-appearance:none; position:absolute; top:8px; left:8px; width:20px; height:20px; margin:0; cursor:pointer;
+                  border-radius:6px; border:1.5px solid #aab3c5; background:rgba(255,255,255,.94); display:grid; place-content:center }
+  .item .rowchk:hover { border-color:var(--accent-solid) }
+  .item .rowchk:checked { background:var(--accent-solid); border-color:var(--accent-solid) }
+  .item .rowchk:checked::after { content:""; width:10px; height:5px; border-left:2px solid #fff; border-bottom:2px solid #fff;
+                                 transform:rotate(-45deg) translate(1px,-1px) }
+  .item .badge { position:absolute; top:8px; right:8px }
+  /* 扁平風格的狀態標籤：淡色底、無外框 */
+  .badge { font-size:11px; font-weight:600; border-radius:999px; padding:1px 9px; white-space:nowrap;
+           background:color-mix(in srgb, currentColor 14%, var(--card)) }
+  .b-idle { color:var(--muted) } .b-run { color:var(--accent) } .b-ok { color:var(--ok) }
+  .b-cache { color:var(--cache) } .b-edit { color:var(--edit) } .b-err { color:var(--err) }
+  /* 右側 */
+  #orig { min-height:60px; max-height:150px; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden }
+  #orig img { max-width:100%; max-height:148px; object-fit:contain }
+  #orig:empty::before { content:attr(data-empty); color:#8c94a8; font-size:13px }
+  textarea { width:100%; min-height:100px; font:14px/1.4 ui-monospace,Consolas,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; resize:vertical }
+  /* 預覽區：公式會自動縮小到完整可見（見 fitPreview）；用一般區塊 + text-align 置中，
+     不用 flex 置中——flex 置中在內容太寬時左側會被切掉而且捲不到 */
+  #pvBox { position:relative; border:1px solid var(--line); border-radius:10px; background:var(--card) }
+  #preview { min-height:140px; padding:36px 14px 14px; overflow-x:auto; text-align:center; font-size:1.3em }
+  #preview .katex-display { margin:0 }
+  #preview img { display:block; margin:0 auto; width:100%; max-height:220px; object-fit:contain }
+  /* 精準預覽是一張 SVG（黑字、透明底）：深色配色下墊一層白底，才看得清楚 */
+  :root[data-theme="dark"] #preview img { background:#fff; border-radius:6px }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #preview img { background:#fff; border-radius:6px } }
+  /* 壓在預覽畫面上的透明背景按鈕 */
+  .pv-tools { position:absolute; top:6px; right:8px; display:flex; align-items:center; gap:2px; z-index:2 }
+  .ghost { background:transparent; color:var(--muted); border:0; border-radius:7px; padding:3px 10px; font-size:12px; font-weight:600 }
+  .ghost:hover:not(:disabled) { background:rgba(127,127,127,.16); color:var(--fg) }
+  .ghost.on { color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent) }
+  .ghost:disabled { opacity:.35 }
+  .pv-sep { width:1px; height:14px; background:var(--line); margin:0 4px }
+  .fmts { display:inline-flex; gap:12px; flex-wrap:wrap }
+  /* 狀態列 */
   #bar { position:fixed; left:0; right:0; bottom:0; display:flex; gap:16px; align-items:flex-start; justify-content:space-between;
          padding:8px 20px; background:var(--card); border-top:1px solid var(--line); font-size:13px; color:var(--muted); z-index:10 }
   #msg { flex:1; min-width:0; max-height:6.5em; overflow:auto; white-space:pre-wrap; word-break:break-all }
-  #msg.err { color:var(--err) }
-  #msg.ok { color:var(--fg) }
-  #health { white-space:nowrap; flex:none }
-  #health .bad { color:var(--err) }
+  #msg.err { color:var(--err) } #msg.ok { color:var(--fg) }
+  #health { white-space:nowrap; flex:none } #health .bad { color:var(--err) }
   dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg) }
+  dialog::backdrop { background:rgba(10,12,24,.45) }
   dialog input { width:340px; padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px }
 </style>
 </head>
 <body>
-<header>
-  <h1><img src="/icon.svg" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:8px">Mathtran　圖片 → LaTeX</h1>
-  <button class="secondary" id="keyBtn">API key</button>
-</header>
+<nav id="toolbar" role="toolbar">
+  <button class="tb" id="langBtn"></button>
+  <button class="tb" id="themeBtn"></button>
+  <button class="tb" id="keyBtn"></button>
+</nav>
 <main>
-  <section>
-    <h2>① 圖片（貼上 Ctrl+V / 拖曳 / 點選）</h2>
-    <div id="drop"><span id="dropHint">把含公式的圖片拖到這裡，或直接貼上截圖</span></div>
-    <input type="file" id="file" accept="image/*" hidden>
-    <div class="row"><button id="ocrBtn" disabled>辨識為 LaTeX</button></div>
-  </section>
-  <section>
-    <h2>② LaTeX（可編輯）</h2>
-    <textarea id="latex" spellcheck="false" placeholder="E = mc^2"></textarea>
-    <h2>③ 預覽</h2>
-    <div id="preview"></div>
+  <section id="left">
+    <h2><span class="step">1</span><span data-i18n="step1">圖片清單</span> <span id="count" class="hint"></span></h2>
     <div class="row">
-      <button class="secondary" id="accBtn">精準預覽（真 LaTeX）</button>
-      <button id="svgBtn">匯出 SVG</button>
-      <button id="pdfBtn">匯出 PDF</button>
-      <button class="secondary" id="copyBtn">複製 LaTeX</button>
+      <button class="secondary" id="addFiles" data-i18n="add_files">＋ 加入檔案</button>
+      <button class="secondary" id="addFolder" data-i18n="add_folder">＋ 加入資料夾</button>
+      <span class="hint" data-i18n="add_hint">也可貼上 (Ctrl+V) 或把檔案 / 資料夾拖進視窗</span>
     </div>
+    <input type="file" id="fileIn" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+    <input type="file" id="folderIn" webkitdirectory hidden>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="checkAll"> <span data-i18n="check_all">全選</span></label>
+      <button class="link" id="rmChecked" data-i18n="remove_checked">移除勾選</button>
+      <button class="link" id="clearAll" data-i18n="clear_all">清空</button>
+      <label class="zoom"><span data-i18n="thumb">縮圖</span> <input type="range" id="thumbSize" min="100" max="320" step="10" value="170"></label>
+    </div>
+    <div id="list" tabindex="0"></div>
+    <div class="row between">
+      <span class="row">
+        <span class="lbl" data-i18n="ocr_label">辨識：</span>
+        <button class="act" id="ocrSel"></button>
+        <button class="act" id="ocrChk"></button>
+        <button class="act" id="ocrAll"></button>
+        <button class="secondary" id="stopBtn" hidden data-i18n="stop">停止</button>
+      </span>
+      <span class="row">
+        <button class="secondary small" id="cacheBtn" data-i18n="cache_btn" data-i18n-title="cache_btn_title">快取…</button>
+      </span>
+    </div>
+    <label class="chk"><input type="checkbox" id="force"> <span data-i18n="force">忽略快取，強制重新辨識（會覆蓋手動修改）</span></label>
+  </section>
+  <section id="right">
+    <h2><span class="step">2</span><span data-i18n="step2">辨識結果</span> <span id="curName" class="hint"></span><span id="curBadge"></span></h2>
+    <div id="orig"></div>
+    <textarea id="latex" spellcheck="false" disabled></textarea>
+    <h2><span class="step">3</span><span data-i18n="step3">預覽</span></h2>
+    <div id="pvBox">
+      <div class="pv-tools">
+        <button class="ghost on" id="pvLive" data-i18n="pv_live" data-i18n-title="pv_live_title">即時</button>
+        <button class="ghost" id="pvAcc" data-i18n="pv_acc" data-i18n-title="pv_acc_title">精準</button>
+        <span class="pv-sep"></span>
+        <button class="ghost" id="pvCopy" data-i18n="pv_copy" data-i18n-title="pv_copy_title">複製 LaTeX</button>
+      </div>
+      <div id="preview"></div>
+    </div>
+    <div class="row">
+      <span class="lbl" data-i18n="fmt_label">匯出格式：</span>
+      <span class="fmts">
+        <label class="chk"><input type="checkbox" class="fmt" value="svg" checked> SVG</label>
+        <label class="chk"><input type="checkbox" class="fmt" value="pdf"> PDF</label>
+        <label class="chk"><input type="checkbox" class="fmt" value="tex"> LaTeX (.tex)</label>
+      </span>
+    </div>
+    <div class="row">
+      <span class="lbl" data-i18n="exp_label">匯出：</span>
+      <button class="act" id="expSel"></button>
+      <button class="act" id="expChk"></button>
+      <button class="act" id="expAll"></button>
+    </div>
+    <div class="hint" data-i18n="exp_hint"></div>
   </section>
 </main>
-<footer id="bar"><span id="msg">就緒</span><span id="health"></span></footer>
+<footer id="bar"><span id="msg"></span><span id="health"></span></footer>
+<dialog id="cacheDlg">
+  <h3 style="margin:0 0 8px" data-i18n="cd_title">辨識快取</h3>
+  <div id="cacheInfo" style="font-size:14px"></div>
+  <p class="hint" style="max-width:440px;margin:10px 0" data-i18n-html="cd_desc"></p>
+  <div class="row">
+    <button class="danger" id="cacheClearList"></button>
+    <button class="danger" id="cacheClearAll" data-i18n="cd_clear_all">清除全部快取</button>
+    <button class="secondary" id="cacheClose" autofocus data-i18n="cd_close">關閉</button>
+  </div>
+</dialog>
 <dialog id="keyDlg">
   <form method="dialog">
-    <p>輸入 Anthropic API key（儲存於本機 ~/.mathtran）</p>
+    <p data-i18n="kd_text"></p>
     <input id="keyIn" type="password" placeholder="sk-ant-...">
-    <div class="row" style="margin-top:10px"><button id="keySave" value="ok">儲存</button><button class="secondary" value="cancel">取消</button></div>
+    <div class="row" style="margin-top:10px"><button id="keySave" value="ok" data-i18n="kd_save">儲存</button><button class="secondary" value="cancel" data-i18n="kd_cancel">取消</button></div>
   </form>
 </dialog>
 <script src="/vendor/katex.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-let imgBlob = null;
+const ALLOWED_TYPE = /^image\/(png|jpeg|webp|gif)$/;
+const ALLOWED_EXT = /\.(png|jpe?g|webp|gif)$/i;
+const CONCURRENCY = 3;
 
-// 所有訊息（進度、成功、錯誤）都顯示在視窗底部狀態列
-function setStatus(text, kind) { $("msg").textContent = text; $("msg").className = kind || ""; }
-function setErr(m) {  // 空字串只會清掉「錯誤」，不影響其他訊息（如已儲存路徑）
-  if (m) setStatus(m, "err");
-  else if ($("msg").className === "err") setStatus("就緒");
+// ====================== 多語系（繁體中文 / English） ======================
+// 一律用 t(key, vars)。vars.n === 1 且有 key_one 時，用單數說法（英文需要）。
+const I18N = {
+  "zh-TW": {
+    step1: "圖片清單", step2: "辨識結果", step3: "預覽",
+    count: "（共 {n} 張，已勾選 {m} 張）",
+    add_files: "＋ 加入檔案", add_folder: "＋ 加入資料夾",
+    add_hint: "也可貼上 (Ctrl+V) 或把檔案 / 資料夾拖進視窗",
+    check_all: "全選", remove_checked: "移除勾選", clear_all: "清空", thumb: "縮圖",
+    list_aria: "圖片清單", ocr_label: "辨識：", exp_label: "匯出：", fmt_label: "匯出格式：",
+    b_sel: "選取的", b_chk: "勾選的 ({n})", b_all: "全部 ({n})", stop: "停止",
+    cache_btn: "快取…", cache_btn_title: "查看或清除辨識快取",
+    force: "忽略快取，強制重新辨識（會覆蓋手動修改）",
+    orig_empty: "尚未選取圖片",
+    latex_ph_none: "請先在左側選取一張圖片",
+    latex_ph_sel: "尚未辨識。按左下角「辨識：選取的」，或直接在此輸入 LaTeX",
+    pv_live: "即時", pv_live_title: "即時預覽（KaTeX，離線）",
+    pv_acc: "精準", pv_acc_title: "用真正的 LaTeX 編譯出來的結果", pv_acc_alt: "精準預覽",
+    pv_copy: "複製 LaTeX", pv_copy_title: "複製 LaTeX 原始碼",
+    exp_hint: "格式可複選。多個檔案會一起匯出：桌面版讓你選資料夾，瀏覽器版下載成 zip。.tex 是完整、可自行編譯的文件。",
+    empty_list: "把圖片貼上、拖曳進來，或按上方「加入檔案 / 資料夾」",
+    row_chk_title: "勾選（批次辨識 / 匯出用）",
+    bd_run: "辨識中…", bd_queued: "等待中", bd_err: "失敗", bd_edit: "已修改", bd_cache: "已快取", bd_ok: "已辨識", bd_idle: "未辨識",
+    ready: "就緒",
+    h_key_ok: "API key ✓", h_key_bad: "⚠ 未設定 API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ 找不到 tectonic",
+    scope_sel: "選取的圖片", scope_chk: "勾選的圖片", scope_all: "目前所有圖片",
+    sep: "，", sep2: "、",
+    m_no_images: "找不到可用的圖片（支援 PNG / JPEG / WebP / GIF）",
+    m_reading: "讀取 {n} 張圖片…",
+    m_added: "已加入 {n} 張", m_added_cached: "{n} 張直接取自快取", m_added_dup: "{n} 張重複已略過",
+    m_drop_fail: "讀取拖曳內容失敗：{err}",
+    m_removed: "已從清單移除 {n} 張（辨識結果仍保留在快取，重新加入會直接帶出）",
+    m_ocr_empty: "沒有可辨識的圖片（{scope}為空）",
+    m_ocr_all_done: "{scope} {n} 張都已有辨識結果，不需重複辨識（要重新辨識請勾選「忽略快取」）",
+    m_confirm_force: "其中 {n} 張有手動修改過，重新辨識會覆蓋修改。要繼續嗎？",
+    m_progress: "辨識中 {done}/{total}…",
+    m_done: "辨識完成：", m_stopped: "已停止（完成 {done}/{total}）：",
+    p_new: "新辨識 {n}", p_cache: "取自快取 {n}", p_fail: "失敗 {n}（游標移到「失敗」標籤可看原因）", p_skip: "略過已有結果 {n}",
+    m_stopping: "停止中…（等進行中的辨識結束）",
+    m_compiling: "以 LaTeX 編譯中…",
+    m_acc_done: "精準預覽完成（真 LaTeX 編譯結果；點「即時」可切回）",
+    m_copied: "已複製 LaTeX", m_copy_fail: "複製失敗：{err}",
+    m_saved: "已儲存：{path}", m_save_cancel: "已取消儲存",
+    m_downloaded: "已下載：{name}（瀏覽器的下載資料夾）",
+    m_fmt_min: "至少要選一種匯出格式",
+    m_exp_empty: "沒有可匯出的圖片（{scope}為空）",
+    m_exp_none: "{scope} 都還沒有辨識結果，請先辨識（或在右側輸入 LaTeX）",
+    m_exporting: "匯出 {fmts} 中（{n} 張圖）…",
+    n_skip_unrec: "；略過尚未辨識 {n} 張", n_fail_see: "；{n} 個失敗，原因見 errors.txt",
+    m_exp_folder: "已匯出 {n} 個檔案（{fmts}）到：{dir}{fail}{skip}",
+    m_exp_cancel: "已取消匯出",
+    m_exp_zip: "已下載 {name}（{n} 個檔案：{fmts}）{fail}{skip}",
+    cd_title: "辨識快取",
+    cd_count: "目前共有 {n} 筆快取", cd_detail: "（其中 {e} 筆是你手動修改過的，{kb} KB）",
+    cd_desc: "快取讓辨識過的圖片不必重複呼叫 API。清除後，這些圖片下次要重新辨識（會花 API 費用），<b>你手動修改過的結果也會一併消失，無法復原</b>。清單內對應圖片目前顯示的結果也會一起清掉。",
+    cd_clear_list: "清除清單內圖片的快取（{n} 張）", cd_clear_all: "清除全部快取", cd_close: "關閉",
+    m_cache_info_fail: "讀取快取資訊失敗：{err}",
+    m_busy_no_clear: "辨識或匯出進行中，請稍後再清除快取",
+    c_clear_all: "要清除全部 {n} 筆快取嗎？", c_edited_all: "\n其中 {e} 筆是你手動修改過的，無法復原。",
+    c_clear_list: "要清除清單內 {n} 張圖片的快取嗎？", c_edited_list: "\n其中 {e} 張有你手動修改的結果，無法復原。",
+    m_cache_cleared: "已清除 {n} 筆快取", m_cache_cleared_list: "；清單內 {n} 張圖片的結果也已清除，需要重新辨識",
+    kd_text: "輸入 Anthropic API key（儲存於本機 ~/.mathtran）", kd_save: "儲存", kd_cancel: "取消",
+    m_key_saved: "已儲存 API key",
+    tb_click: "（點擊切換）",
+    tb_lang_system: "語言：跟隨系統", tb_lang_zh: "語言：繁體中文", tb_lang_en: "語言：English",
+    tb_theme_system: "配色：跟隨系統", tb_theme_light: "配色：淺色（鋼彈 RX-78-2）", tb_theme_dark: "配色：深色（新世紀福音戰士）",
+    tb_key: "設定 Anthropic API key",
+    m_lang: "語言：{name}", m_theme: "配色：{name}",
+    ln_system: "跟隨系統", ln_zh: "繁體中文", ln_en: "English",
+    th_system: "跟隨系統", th_light: "淺色（鋼彈 RX-78-2）", th_dark: "深色（新世紀福音戰士）",
+  },
+  "en": {
+    step1: "Images", step2: "Result", step3: "Preview",
+    count: "({n} total, {m} checked)",
+    add_files: "＋ Add files", add_folder: "＋ Add folder",
+    add_hint: "You can also paste (Ctrl+V) or drag files / folders into the window",
+    check_all: "Select all", remove_checked: "Remove checked", clear_all: "Clear list", thumb: "Size",
+    list_aria: "Image list", ocr_label: "Recognize:", exp_label: "Export:", fmt_label: "Export formats:",
+    b_sel: "Selected", b_chk: "Checked ({n})", b_all: "All ({n})", stop: "Stop",
+    cache_btn: "Cache…", cache_btn_title: "View or clear the recognition cache",
+    force: "Ignore the cache and recognize again (overwrites manual edits)",
+    orig_empty: "No image selected",
+    latex_ph_none: "Select an image on the left first",
+    latex_ph_sel: "Not recognized yet. Click “Recognize: Selected” at the bottom left, or type LaTeX here",
+    pv_live: "Live", pv_live_title: "Live preview (KaTeX, works offline)",
+    pv_acc: "Accurate", pv_acc_title: "Result compiled by real LaTeX", pv_acc_alt: "Accurate preview",
+    pv_copy: "Copy LaTeX", pv_copy_title: "Copy the LaTeX source",
+    exp_hint: "Formats can be combined. Several files are exported together: the desktop app lets you pick a folder, the browser version downloads a zip. A .tex file is a complete document you can compile yourself.",
+    empty_list: "Paste or drag images here, or use “Add files / folder” above",
+    row_chk_title: "Check (for batch recognition / export)",
+    bd_run: "Recognizing…", bd_queued: "Queued", bd_err: "Failed", bd_edit: "Edited", bd_cache: "Cached", bd_ok: "Recognized", bd_idle: "Not recognized",
+    ready: "Ready",
+    h_key_ok: "API key ✓", h_key_bad: "⚠ No API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ tectonic not found",
+    scope_sel: "Selected", scope_chk: "Checked", scope_all: "All",
+    sep: ", ", sep2: ", ",
+    m_no_images: "No usable images found (PNG / JPEG / WebP / GIF are supported)",
+    m_reading: "Reading {n} images…", m_reading_one: "Reading 1 image…",
+    m_added: "Added {n} images", m_added_one: "Added 1 image",
+    m_added_cached: "{n} loaded from the cache",
+    m_added_dup: "{n} duplicates skipped", m_added_dup_one: "1 duplicate skipped",
+    m_drop_fail: "Couldn't read the dropped items: {err}",
+    m_removed: "Removed {n} images from the list (results stay in the cache and come back when you add them again)",
+    m_removed_one: "Removed 1 image from the list (its result stays in the cache and comes back when you add it again)",
+    m_ocr_empty: "Nothing to recognize (“{scope}” has no images)",
+    m_ocr_all_done: "“{scope}”: all {n} already have results, nothing to recognize (tick “Ignore the cache” to redo)",
+    m_ocr_all_done_one: "“{scope}”: the image already has a result, nothing to recognize (tick “Ignore the cache” to redo)",
+    m_confirm_force: "{n} of them were edited by hand; recognizing again will overwrite those edits. Continue?",
+    m_confirm_force_one: "1 of them was edited by hand; recognizing again will overwrite that edit. Continue?",
+    m_progress: "Recognizing {done}/{total}…",
+    m_done: "Recognition finished: ", m_stopped: "Stopped ({done}/{total} done): ",
+    p_new: "{n} new", p_cache: "{n} from cache", p_fail: "{n} failed (hover the “Failed” badge for the reason)", p_skip: "{n} skipped (already had results)",
+    m_stopping: "Stopping… (waiting for the running recognitions to finish)",
+    m_compiling: "Compiling with LaTeX…",
+    m_acc_done: "Accurate preview ready (real LaTeX output; click “Live” to switch back)",
+    m_copied: "LaTeX copied", m_copy_fail: "Copy failed: {err}",
+    m_saved: "Saved: {path}", m_save_cancel: "Save cancelled",
+    m_downloaded: "Downloaded: {name} (in the browser's download folder)",
+    m_fmt_min: "Keep at least one export format",
+    m_exp_empty: "Nothing to export (“{scope}” has no images)",
+    m_exp_none: "None of “{scope}” has a result yet. Recognize first (or type LaTeX on the right)",
+    m_exporting: "Exporting {fmts} ({n} images)…", m_exporting_one: "Exporting {fmts} (1 image)…",
+    n_skip_unrec: "; skipped {n} not yet recognized", n_fail_see: "; {n} failed, see errors.txt",
+    m_exp_folder: "Exported {n} files ({fmts}) to: {dir}{fail}{skip}",
+    m_exp_folder_one: "Exported 1 file ({fmts}) to: {dir}{fail}{skip}",
+    m_exp_cancel: "Export cancelled",
+    m_exp_zip: "Downloaded {name} ({n} files: {fmts}){fail}{skip}",
+    m_exp_zip_one: "Downloaded {name} (1 file: {fmts}){fail}{skip}",
+    cd_title: "Recognition cache",
+    cd_count: "{n} cached results", cd_count_one: "1 cached result",
+    cd_detail: " ({e} edited by hand, {kb} KB)",
+    cd_desc: "The cache spares you from calling the API again for images you have already recognized. After clearing, those images must be recognized again (which costs API fees), and <b>results you edited by hand are lost too and cannot be recovered</b>. The results currently shown for matching images in the list are cleared as well.",
+    cd_clear_list: "Clear cache for images in the list ({n})", cd_clear_all: "Clear all cache", cd_close: "Close",
+    m_cache_info_fail: "Couldn't read the cache info: {err}",
+    m_busy_no_clear: "Recognition or export is running; clear the cache later",
+    c_clear_all: "Clear all {n} cached results?", c_clear_all_one: "Clear the 1 cached result?",
+    c_edited_all: "\n{e} of them were edited by hand and cannot be recovered.",
+    c_clear_list: "Clear the cache for the {n} images in the list?", c_clear_list_one: "Clear the cache for the 1 image in the list?",
+    c_edited_list: "\n{e} of them have hand-edited results that cannot be recovered.",
+    m_cache_cleared: "Cleared {n} cached results", m_cache_cleared_one: "Cleared 1 cached result",
+    m_cache_cleared_list: "; the results of {n} images in the list were cleared too and need to be recognized again",
+    m_cache_cleared_list_one: "; the result of 1 image in the list was cleared too and needs to be recognized again",
+    kd_text: "Enter your Anthropic API key (stored locally in ~/.mathtran)", kd_save: "Save", kd_cancel: "Cancel",
+    m_key_saved: "API key saved",
+    tb_click: " (click to switch)",
+    tb_lang_system: "Language: follow system", tb_lang_zh: "Language: Traditional Chinese", tb_lang_en: "Language: English",
+    tb_theme_system: "Theme: follow system", tb_theme_light: "Theme: light (RX-78-2)", tb_theme_dark: "Theme: dark (Evangelion)",
+    tb_key: "Set the Anthropic API key",
+    m_lang: "Language: {name}", m_theme: "Theme: {name}",
+    ln_system: "follow system", ln_zh: "Traditional Chinese", ln_en: "English",
+    th_system: "follow system", th_light: "light (RX-78-2)", th_dark: "dark (Evangelion)",
+  },
+};
+const DEFAULTS = { lang: "system", theme: "system", thumb: 170, formats: ["svg"] };
+const LANG_CYCLE = ["system", "zh-TW", "en"], THEME_CYCLE = ["system", "light", "dark"];
+let LANG = "zh-TW";
+function resolveLang(pref) {   // 「跟隨系統」：中文系統 → 繁體中文，其他 → English
+  if (pref === "zh-TW" || pref === "en") return pref;
+  return (navigator.language || "").toLowerCase().startsWith("zh") ? "zh-TW" : "en";
 }
+function t(key, vars) {
+  const d = I18N[LANG];
+  let s = (vars && vars.n === 1 && d[key + "_one"] !== undefined) ? d[key + "_one"] : (d[key] ?? I18N["zh-TW"][key] ?? key);
+  return vars ? s.replace(/\{(\w+)\}/g, (m, k) => vars[k] !== undefined ? vars[k] : m) : s;
+}
+// 每個送往後端的請求都帶上目前語言，後端的錯誤訊息才會跟介面同一種語言
+const apiFetch = (url, opts = {}) => fetch(url, { ...opts, headers: { ...(opts.headers || {}), "X-Lang": LANG } });
+
+// ====================== 狀態 ======================
+// item: { id, name, file, url, hash, latex, base, edited, fromCache, state: idle|queued|running|error, error }
+const S = { items: [], sel: null, nextId: 1, pasteN: 0, busy: false, cancel: false, pv: "live",
+            settings: { ...DEFAULTS, formats: [...DEFAULTS.formats] }, msgRef: null };
+const hasResult = it => it.latex != null && it.latex.trim() !== "";
+const cur = () => S.items.find(i => i.id === S.sel) || null;
+const checked = () => S.items.filter(i => i.checked);
+
+// ---------- 狀態列 ----------
+// setStatus：原樣顯示（伺服器回來的錯誤、拼接好的訊息）；status：用語言表，切換語言時會重新翻譯
+function showStatus(text, kind, ref) { $("msg").textContent = text; $("msg").className = kind || ""; S.msgRef = ref || null; }
+const setStatus = (text, kind) => showStatus(text, kind);
+const status = (key, vars, kind) => showStatus(t(key, vars), kind, { key, vars, kind });
+function setErr(m) {  // 空字串只會清掉「錯誤」，不影響其他訊息（如已儲存路徑）
+  if (m) showStatus(m, "err");
+  else if ($("msg").className === "err") status("ready");
+}
+const errKey = (key, vars) => status(key, vars, "err");
+
+// ====================== 設定（語言、配色、縮圖、匯出格式）======================
+// 存在伺服器端的設定檔，不用 localStorage：桌面版每次啟動的埠號都不同，localStorage 會遺失。
+// 還沒送出的變更先累積起來：縮圖滑桿拖動時會防抖，若這時又改了別的設定，不能把先前那筆吃掉。
+let saveTimer, pendingPatch = {};
+function flushSettings() {
+  clearTimeout(saveTimer);
+  const patch = pendingPatch; pendingPatch = {};
+  if (Object.keys(patch).length) {
+    apiFetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(patch) }).catch(() => {});
+  }
+}
+function saveSettings(patch, delay = 0) {
+  Object.assign(S.settings, patch);
+  Object.assign(pendingPatch, patch);
+  clearTimeout(saveTimer);
+  if (delay) saveTimer = setTimeout(flushSettings, delay); else flushSettings();
+}
+const ICONS = {
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.2 3.4 3.2 14.6 0 18M12 3c-3.2 3.4-3.2 14.6 0 18"/></svg>',
+  // 半黑半白的圓：跟隨系統
+  half: '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 0 0 0 18z" fill="#000"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#fff"/><circle cx="12" cy="12" r="9" fill="none"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15.5" r="4"/><path d="M11 12.5 20 3.5M16.5 7l3 3M14 9.5l2 2"/></svg>',
+};
+const LANG_KEY = { "system": "system", "zh-TW": "zh", "en": "en" };
+function renderToolbar() {
+  const lp = S.settings.lang, tp = S.settings.theme;
+  $("langBtn").innerHTML = lp === "system" ? ICONS.globe : `<span class="tbtxt">${lp === "zh-TW" ? "中" : "En"}</span>`;
+  const lt = t("tb_lang_" + LANG_KEY[lp]) + t("tb_click");
+  $("langBtn").title = lt; $("langBtn").setAttribute("aria-label", lt);
+  $("themeBtn").innerHTML = tp === "system" ? ICONS.half : tp === "light" ? ICONS.sun : ICONS.moon;
+  const tt = t("tb_theme_" + tp) + t("tb_click");
+  $("themeBtn").title = tt; $("themeBtn").setAttribute("aria-label", tt);
+  const dot = $("keyBtn").querySelector(".dot");
+  $("keyBtn").innerHTML = ICONS.key + '<span class="dot" hidden></span>';
+  if (dot) $("keyBtn").querySelector(".dot").hidden = dot.hidden;   // 重畫圖示不要把紅點狀態弄丟
+  $("keyBtn").title = t("tb_key"); $("keyBtn").setAttribute("aria-label", t("tb_key"));
+}
+function applyTheme() {
+  const th = S.settings.theme;
+  if (th === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = th;
+}
+function applyStatic() {
+  document.documentElement.lang = LANG === "zh-TW" ? "zh-Hant" : "en";
+  document.querySelectorAll("[data-i18n]").forEach(e => { e.textContent = t(e.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-title]").forEach(e => { e.title = t(e.dataset.i18nTitle); });
+  document.querySelectorAll("[data-i18n-html]").forEach(e => { e.innerHTML = t(e.dataset.i18nHtml); });   // 只放我們自己的翻譯字串
+  $("list").setAttribute("aria-label", t("list_aria"));
+  $("orig").dataset.empty = t("orig_empty");
+}
+function applyLanguage() {
+  LANG = resolveLang(S.settings.lang);
+  applyStatic(); renderToolbar(); renderList(); syncRight(); health();
+  if (S.msgRef) status(S.msgRef.key, S.msgRef.vars, S.msgRef.kind);   // 狀態列用目前語言重新翻譯
+  if ($("cacheDlg").open) refreshCacheInfo().catch(() => {});
+}
+const nextOf = (cycle, v) => cycle[(cycle.indexOf(v) + 1) % cycle.length];
+$("langBtn").onclick = () => {
+  saveSettings({ lang: nextOf(LANG_CYCLE, S.settings.lang) });
+  applyLanguage();
+  status("m_lang", { name: t("ln_" + LANG_KEY[S.settings.lang]) });
+};
+$("themeBtn").onclick = () => {
+  saveSettings({ theme: nextOf(THEME_CYCLE, S.settings.theme) });
+  applyTheme(); renderToolbar();
+  status("m_theme", { name: t("th_" + S.settings.theme) });
+};
+
+// ====================== 預覽 ======================
 // KaTeX 數學模式不認中文：把不在 \text{} 內的中日韓字元包進 \text{}
 const CJK_RUN = /(?<!\\text\{[^{}]*)[⺀-鿿豈-﫿＀-￯　-〿]+/g;
 function renderKatex() {
+  const box = $("preview");
+  box.style.fontSize = "";   // 先還原，fitPreview 才量得到原始寬度
   const src = ($("latex").value || "\\;").replace(CJK_RUN, "\\text{$&}");
-  try { katex.render(src, $("preview"), { displayMode:true, throwOnError:true, strict:"ignore" }); setErr(""); }
-  catch (e) { $("preview").textContent = ""; setErr(e.message); }
+  try { katex.render(src, box, { displayMode:true, throwOnError:true, strict:"ignore" }); setErr(""); fitPreview(); }
+  catch (e) { box.textContent = ""; setErr(e.message); }
 }
-$("latex").addEventListener("input", renderKatex);
+// 公式比預覽區寬時等比縮小，讓整個公式完整可見（縮到下限仍放不下才出現捲軸）
+const PV_MIN_SCALE = 0.25;
+function fitPreview() {
+  const box = $("preview"), k = box.querySelector(".katex-display > .katex");
+  if (!k) return;
+  const cs = getComputedStyle(box);
+  const avail = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  // 注意：顯示模式下 .katex 本身的寬度永遠等於容器寬度（內容是溢出去的），量它沒有意義。
+  // 判斷「有沒有溢出」要看 scrollWidth > clientWidth（沒溢出時 scrollWidth 本來就等於 clientWidth，
+  // 不能拿來當內容寬度）。溢出時一邊縮小一邊重新檢查，直到不再溢出（或到下限）。
+  const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  let scale = 1;
+  for (let i = 0; i < 8 && avail > 0 && box.scrollWidth > box.clientWidth + 1 && scale > PV_MIN_SCALE; i++) {
+    const content = Math.max(box.scrollWidth - pad, 1);
+    scale = Math.max(PV_MIN_SCALE, scale * Math.max(0.5, avail / content) * 0.99);   // 字級與寬度幾乎成正比，通常 1~3 次收斂
+    box.style.fontSize = (1.3 * scale) + "em";
+  }
+}
+let lastPvWidth = 0;
+function refit() {   // 視窗大小改變時重新縮放（只在寬度變了才做，避免字級改變造成的連鎖觸發）
+  const w = $("preview").clientWidth;
+  if (w !== lastPvWidth) { lastPvWidth = w; if (S.pv === "live") renderKatex(); }
+}
+window.addEventListener("resize", () => requestAnimationFrame(refit));
 
-function setImage(blob) {
-  imgBlob = blob;
-  const img = document.createElement("img");
-  img.src = URL.createObjectURL(blob);
-  $("drop").replaceChildren(img);
-  $("ocrBtn").disabled = false;
+// 預覽有兩種模式：live＝KaTeX 即時預覽；acc＝真正 LaTeX 編譯出來的 SVG（精準）
+function renderPreview() {
+  const it = cur();
+  if (S.pv === "acc" && !(it && it.acc && it.acc.latex === it.latex)) S.pv = "live";   // 已修改 → 精準結果失效
+  const has = !!it && hasResult(it);
+  $("pvLive").classList.toggle("on", S.pv === "live");
+  $("pvAcc").classList.toggle("on", S.pv === "acc");
+  $("pvAcc").disabled = !has; $("pvCopy").disabled = !has;
+  if (S.pv === "acc") {
+    const img = document.createElement("img"); img.src = it.acc.url; img.alt = t("pv_acc_alt");
+    $("preview").style.fontSize = ""; $("preview").replaceChildren(img);
+  } else renderKatex();
 }
-$("drop").onclick = () => $("file").click();
-$("file").onchange = e => e.target.files[0] && setImage(e.target.files[0]);
-$("drop").ondragover = e => { e.preventDefault(); $("drop").classList.add("over"); };
-$("drop").ondragleave = () => $("drop").classList.remove("over");
-$("drop").ondrop = e => { e.preventDefault(); $("drop").classList.remove("over"); const f = e.dataTransfer.files[0]; f && f.type.startsWith("image/") && setImage(f); };
-document.addEventListener("paste", e => {
-  for (const it of e.clipboardData.items) if (it.type.startsWith("image/")) { setImage(it.getAsFile()); break; }
+
+// ====================== 清單顯示 ======================
+const BADGE = { running: ["bd_run", "run"], queued: ["bd_queued", "idle"], error: ["bd_err", "err"] };
+function badgeOf(it) {
+  if (BADGE[it.state]) return BADGE[it.state];
+  if (hasResult(it)) return it.edited ? ["bd_edit", "edit"] : it.fromCache ? ["bd_cache", "cache"] : ["bd_ok", "ok"];
+  return ["bd_idle", "idle"];
+}
+function makeBadge(it) {
+  const [key, kind] = badgeOf(it);
+  const b = document.createElement("span");
+  b.className = "badge b-" + kind; b.textContent = t(key);
+  if (it.state === "error" && it.error) b.title = it.error;
+  return b;
+}
+// 說明列只顯示檔名（完整路徑在滑鼠提示裡）；太長時用「中間省略」，這樣檔名結尾的差異（如 …Equation3）還看得到
+const baseName = n => n.split(/[\\/]/).pop();
+function shorten(s, max) {
+  if (s.length <= max) return s;
+  const keep = Math.max(max - 1, 4), head = Math.ceil(keep * 0.5), tail = keep - head;
+  return s.slice(0, head) + "…" + s.slice(s.length - tail);
+}
+function captionChars() {   // 依目前卡片寬度估計說明列放得下幾個字
+  const list = $("list"), thumb = parseFloat(getComputedStyle(list).getPropertyValue("--thumb")) || 170;
+  const avail = list.clientWidth - 14, cols = Math.max(1, Math.floor((avail + 10) / (thumb + 10)));
+  const cardW = (avail - 10 * (cols - 1)) / cols;
+  return Math.max(6, Math.floor((cardW - 24) / 6.6));
+}
+function renderList() {
+  const list = $("list");
+  list.classList.toggle("grid", S.items.length > 0);
+  if (!S.items.length) {
+    const d = document.createElement("div"); d.id = "empty";
+    d.textContent = t("empty_list");
+    list.replaceChildren(d);
+  } else {
+    const maxChars = captionChars();
+    list.replaceChildren(...S.items.map(it => {
+      const row = document.createElement("div");
+      row.className = "item" + (it.id === S.sel ? " sel" : ""); row.dataset.id = it.id; row.title = it.name;
+      const box = document.createElement("div"); box.className = "imgbox";
+      const img = document.createElement("img"); img.className = "thumb"; img.src = it.url; img.alt = it.name;
+      box.append(img);
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!it.checked; cb.className = "rowchk";
+      cb.title = t("row_chk_title");
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = shorten(baseName(it.name), maxChars);
+      row.append(box, cb, makeBadge(it), nm);   // 勾選框、狀態標籤壓在圖片上；檔名在圖片下方的說明列
+      return row;
+    }));
+    const selRow = list.querySelector(".item.sel");
+    if (selRow) selRow.scrollIntoView({ block: "nearest" });
+  }
+  updateCounts();
+}
+function updateCounts() {
+  const n = S.items.length, m = checked().length, hasCur = !!cur();
+  $("count").textContent = n ? t("count", { n, m }) : "";
+  for (const p of ["ocr", "exp"]) {
+    $(p + "Sel").disabled = S.busy || !hasCur;
+    $(p + "Chk").disabled = S.busy || m === 0;
+    $(p + "All").disabled = S.busy || n === 0;
+    $(p + "Sel").textContent = t("b_sel");
+    $(p + "Chk").textContent = t("b_chk", { n: m });
+    $(p + "All").textContent = t("b_all", { n });
+  }
+  const ca = $("checkAll");
+  ca.checked = n > 0 && m === n; ca.indeterminate = m > 0 && m < n; ca.disabled = n === 0;
+  $("rmChecked").disabled = S.busy || m === 0; $("clearAll").disabled = S.busy || n === 0;
+  const has = hasCur && hasResult(cur());
+  $("pvAcc").disabled = !has; $("pvCopy").disabled = !has;
+}
+function setBusy(b, cancellable) {
+  S.busy = b; S.cancel = false;
+  $("stopBtn").hidden = !(b && cancellable);
+  updateCounts();
+}
+
+// ====================== 選取與右側顯示 ======================
+function syncRight() {
+  const it = cur();
+  $("latex").disabled = !it;
+  $("latex").value = it && it.latex != null ? it.latex : "";
+  $("latex").placeholder = t(it ? "latex_ph_sel" : "latex_ph_none");
+  $("curName").textContent = it ? it.name : "";
+  const bs = $("curBadge"); bs.replaceChildren(...(it ? [makeBadge(it)] : []));
+  const orig = $("orig");
+  if (it) { const img = document.createElement("img"); img.src = it.url; img.alt = it.name; orig.replaceChildren(img); }
+  else orig.replaceChildren();
+  renderPreview();
+  updateCounts();
+}
+function select(id) {
+  flushPersist();
+  S.sel = id; S.pv = "live";   // 換一張圖就回到即時預覽（精準預覽要重新編譯，不自動做）
+  renderList(); syncRight();
+}
+
+// ====================== 手動修改存回快取 ======================
+const persistTimers = new Map();
+function schedulePersist(it) {
+  clearTimeout(persistTimers.get(it.id));
+  persistTimers.set(it.id, setTimeout(() => persistNow(it), 500));
+}
+function persistNow(it) {
+  clearTimeout(persistTimers.get(it.id)); persistTimers.delete(it.id);
+  if (!hasResult(it)) return;
+  apiFetch("/api/cache/" + it.hash, { method: "PUT", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ latex: it.latex }) }).catch(() => {});
+}
+function flushPersist() { for (const id of [...persistTimers.keys()]) { const it = S.items.find(i => i.id === id); if (it) persistNow(it); } }
+$("latex").addEventListener("input", () => {
+  const it = cur(); if (!it) return;
+  it.latex = $("latex").value;
+  it.edited = it.latex !== it.base;
+  if (it.state === "error") it.state = "idle";
+  renderPreview(); schedulePersist(it);   // 精準預覽在內容改變後會失效並自動回到即時預覽
+  const row = $("list").querySelector(`.item[data-id="${it.id}"]`);   // 只更新該列標籤，避免整個清單重畫
+  if (row) row.querySelector(".badge").replaceWith(makeBadge(it));
+  $("curBadge").replaceChildren(makeBadge(it)); updateCounts();
 });
 
-async function busy(btn, label, fn) {
-  btn.disabled = true; setStatus(label + "…");
-  try { await fn(); } catch (e) { setErr(e.message); } finally { btn.disabled = false; }
+// ====================== 加入圖片 ======================
+async function sha256(blob) {
+  const d = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
+const byName = (a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true });
+
+async function addFiles(entries, { sort = true } = {}) {
+  const imgs = entries.filter(e => ALLOWED_TYPE.test(e.file.type) || ALLOWED_EXT.test(e.name));
+  if (!imgs.length) { if (entries.length) errKey("m_no_images"); return; }
+  status("m_reading", { n: imgs.length });
+  const known = new Set(S.items.map(i => i.hash)); let dup = 0; const fresh = [];
+  for (const e of imgs) {
+    const hash = await sha256(e.file);
+    if (known.has(hash)) { dup++; continue; }
+    known.add(hash);
+    fresh.push({ id: S.nextId++, name: e.name, file: e.file, url: URL.createObjectURL(e.file), hash,
+                 latex: null, base: null, edited: false, fromCache: false, state: "idle", error: null, checked: false });
+  }
+  if (sort) fresh.sort(byName);
+  let hits = {};
+  try {   // 查快取，已辨識過的直接帶出結果
+    for (let i = 0; i < fresh.length; i += 500) {
+      const r = await apiFetch("/api/cache/lookup", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hashes: fresh.slice(i, i + 500).map(f => f.hash) }) });
+      Object.assign(hits, await r.json());
+    }
+  } catch (e) { /* 快取查詢失敗不影響加入 */ }
+  let cached = 0;
+  for (const it of fresh) {
+    const h = hits[it.hash];
+    if (h) { it.latex = h.latex; it.edited = h.edited; it.fromCache = true; if (!h.edited) it.base = h.latex; cached++; }
+  }
+  S.items.push(...fresh);
+  if (fresh.length && !cur()) S.sel = fresh[0].id;
+  renderList(); syncRight();
+  const parts = [t("m_added", { n: fresh.length })];
+  if (cached) parts.push(t("m_added_cached", { n: cached }));
+  if (dup) parts.push(t("m_added_dup", { n: dup }));
+  setStatus(parts.join(t("sep")), fresh.length ? "ok" : "");
+}
+
+$("addFiles").onclick = () => $("fileIn").click();
+$("addFolder").onclick = () => $("folderIn").click();
+for (const id of ["fileIn", "folderIn"]) {
+  $(id).onchange = async e => {
+    const files = [...e.target.files]; e.target.value = "";
+    await addFiles(files.map(f => ({ file: f, name: f.webkitRelativePath || f.name })));
+  };
+}
+document.addEventListener("paste", e => {
+  const files = [...(e.clipboardData?.items || [])].filter(i => i.type.startsWith("image/")).map(i => i.getAsFile()).filter(Boolean);
+  if (!files.length) return;
+  e.preventDefault();
+  addFiles(files.map(f => ({ file: f, name: `貼上-${String(++S.pasteN).padStart(3, "0")}.${(f.type.split("/")[1] || "png").replace("jpeg", "jpg")}` })), { sort: false });
+});
+// 拖曳：整個視窗都可放，也支援整個資料夾
+document.addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("dragging"); });
+document.addEventListener("dragleave", e => { if (!e.relatedTarget) document.body.classList.remove("dragging"); });
+document.addEventListener("drop", e => {
+  e.preventDefault(); document.body.classList.remove("dragging");
+  entriesFromDrop(e.dataTransfer).then(addFiles).catch(err => errKey("m_drop_fail", { err: err.message }));
+});
+async function entriesFromDrop(dt) {
+  const out = [];
+  // webkitGetAsEntry 必須在 drop 事件同步階段呼叫，所以先取出 entry 再 await
+  const ents = [...dt.items].filter(i => i.kind === "file").map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  const walk = async (entry, path) => {
+    if (entry.isFile) {
+      out.push({ file: await new Promise((res, rej) => entry.file(res, rej)), name: path + entry.name });
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader(); let batch;
+      do {
+        batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        for (const c of batch) await walk(c, path + entry.name + "/");
+      } while (batch.length);
+    }
+  };
+  if (ents.length) for (const e of ents) await walk(e, "");
+  else for (const f of dt.files) out.push({ file: f, name: f.name });
+  return out;
+}
+
+// ====================== 清單操作 ======================
+$("list").addEventListener("click", e => {
+  const row = e.target.closest(".item"); if (!row) return;
+  const id = +row.dataset.id, it = S.items.find(i => i.id === id);
+  if (e.target.classList.contains("rowchk")) { it.checked = e.target.checked; updateCounts(); return; }
+  select(id); $("list").focus();
+});
+$("list").addEventListener("keydown", e => {
+  const i = S.items.findIndex(x => x.id === S.sel);
+  const rows = $("list").querySelectorAll(".item");
+  const cols = rows.length ? [...rows].filter(r => r.offsetTop === rows[0].offsetTop).length : 1;   // 目前一列幾張
+  const move = d => { const j = i + d; if (j >= 0 && j < S.items.length) { e.preventDefault(); select(S.items[j].id); } };
+  if (e.key === "ArrowRight") move(1);
+  else if (e.key === "ArrowLeft") move(-1);
+  else if (e.key === "ArrowDown") move(cols);
+  else if (e.key === "ArrowUp") move(-cols);
+  else if (e.key === " " && i >= 0) { e.preventDefault(); S.items[i].checked = !S.items[i].checked; renderList(); }
+});
+// 縮圖大小：存在伺服器端的設定檔（拖動時防抖）
+function applyThumb(v) { $("list").style.setProperty("--thumb", v + "px"); }
+$("thumbSize").oninput = e => {
+  applyThumb(e.target.value); renderList();   // 重畫才會依新寬度重新計算檔名的省略
+  saveSettings({ thumb: +e.target.value }, 400);
+};
+let listResizeTimer;
+window.addEventListener("resize", () => { clearTimeout(listResizeTimer); listResizeTimer = setTimeout(renderList, 150); });
+$("checkAll").onchange = e => { S.items.forEach(i => i.checked = e.target.checked); renderList(); };
+function removeItems(list) {
+  flushPersist();
+  const ids = new Set(list.map(i => i.id));
+  list.forEach(i => { URL.revokeObjectURL(i.url); if (i.acc) URL.revokeObjectURL(i.acc.url); });
+  const idx = S.items.findIndex(i => i.id === S.sel);
+  S.items = S.items.filter(i => !ids.has(i.id));
+  if (ids.has(S.sel)) S.sel = (S.items[Math.min(idx, S.items.length - 1)] || {}).id ?? null;
+  renderList(); syncRight();
+  status("m_removed", { n: list.length }, "ok");
+}
+$("rmChecked").onclick = () => removeItems(checked());
+$("clearAll").onclick = () => removeItems([...S.items]);
+
+// ====================== 辨識 ======================
 async function check(r) {
   if (r.ok) return r;
   let msg = r.statusText;
   try { msg = (await r.json()).detail || msg; } catch {}
   throw new Error(msg);
 }
+async function runOcr(list, scopeKey) {
+  const scope = t(scopeKey);
+  if (!list.length) { errKey("m_ocr_empty", { scope }); return; }
+  flushPersist();
+  const force = $("force").checked;
+  const todo = force ? list : list.filter(it => !hasResult(it));
+  const skipped = list.length - todo.length;
+  if (!todo.length) { status("m_ocr_all_done", { scope, n: list.length }, "ok"); return; }
+  const editedN = force ? todo.filter(it => it.edited).length : 0;
+  if (editedN && !confirm(t("m_confirm_force", { n: editedN }))) return;
 
-$("ocrBtn").onclick = () => busy($("ocrBtn"), "辨識中", async () => {
-  const fd = new FormData(); fd.append("file", imgBlob, "image");
-  const r = await check(await fetch("/api/ocr", { method:"POST", body:fd }));
-  $("latex").value = (await r.json()).latex;
-  renderKatex();
-  setStatus("辨識完成", "ok");
-});
+  setBusy(true, true);
+  todo.forEach(it => { it.state = "queued"; it.error = null; });
+  renderList();
+  const queue = [...todo];
+  let done = 0, fresh = 0, fromCache = 0, fail = 0, fatal = null;
+  const worker = async () => {
+    while (queue.length && !S.cancel && !fatal) {
+      const it = queue.shift();
+      it.state = "running"; renderList();
+      try {
+        const fd = new FormData(); fd.append("file", it.file, "image");
+        const r = await check(await apiFetch("/api/ocr" + (force ? "?force=true" : ""), { method: "POST", body: fd }));
+        const j = await r.json();
+        it.latex = j.latex; it.base = j.latex; it.edited = false; it.fromCache = j.cached; it.state = "idle";
+        j.cached ? fromCache++ : fresh++;
+      } catch (e) {
+        it.state = "error"; it.error = e.message; fail++;
+        if (/API key/.test(e.message)) fatal = e.message;   // 沒設定 key：不必每張都試（兩種語言的訊息都含 "API key"）
+      }
+      done++;
+      status("m_progress", { done, total: todo.length });
+      renderList();
+      if (cur() === it) syncRight();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, todo.length) }, worker));
+  queue.forEach(it => { it.state = "idle"; });   // 被停止 / 中止而沒處理到的
+  const stopped = S.cancel;
+  setBusy(false); renderList(); syncRight();
+  if (fatal) { setErr(fatal); return; }
+  const parts = [t("p_new", { n: fresh }), t("p_cache", { n: fromCache })];
+  if (fail) parts.push(t("p_fail", { n: fail }));
+  if (skipped) parts.push(t("p_skip", { n: skipped }));
+  setStatus((stopped ? t("m_stopped", { done, total: todo.length }) : t("m_done")) + parts.join(t("sep2")), fail ? "err" : "ok");
+}
+$("stopBtn").onclick = () => { S.cancel = true; status("m_stopping"); };
+$("ocrSel").onclick = () => runOcr(cur() ? [cur()] : [], "scope_sel");
+$("ocrChk").onclick = () => runOcr(checked(), "scope_chk");
+$("ocrAll").onclick = () => runOcr([...S.items], "scope_all");
 
-async function exportAs(fmt) {
-  const r = await check(await fetch("/api/export/" + fmt, {
-    method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ latex:$("latex").value }) }));
+// ====================== 預覽 / 複製 ======================
+async function exportOne(fmt, latex) {
+  const r = await check(await apiFetch("/api/export/" + fmt, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ latex }) }));
   return r.blob();
 }
-async function download(blob, name) {
+// 預覽區右上角：即時 / 精準 切換（可來回切換），以及複製
+$("pvLive").onclick = () => { S.pv = "live"; renderPreview(); };
+$("pvAcc").onclick = async () => {
+  const it = cur(); if (!it || !hasResult(it)) return;
+  if (it.acc && it.acc.latex === it.latex) { S.pv = "acc"; renderPreview(); return; }   // 已編譯過，直接切換
+  const snapshot = it.latex;
+  $("pvAcc").disabled = true; status("m_compiling");
+  try {
+    const url = URL.createObjectURL(await exportOne("svg", snapshot));
+    if (it.acc) URL.revokeObjectURL(it.acc.url);
+    it.acc = { latex: snapshot, url };
+    if (cur() === it && it.latex === snapshot) { S.pv = "acc"; renderPreview(); }   // 編譯途中換圖 / 改內容就不強制切換
+    status("m_acc_done", null, "ok");
+  } catch (e) { setErr(e.message); } finally { updateCounts(); }
+};
+$("pvCopy").onclick = async () => {
+  const it = cur(); if (!it || !hasResult(it)) return;
+  try { await navigator.clipboard.writeText(it.latex); status("m_copied", null, "ok"); }
+  catch (e) { errKey("m_copy_fail", { err: e.message }); }
+};
+
+// ====================== 匯出 ======================
+const isDesktop = () => !!(window.pywebview && window.pywebview.api && window.pywebview.api.save_file);
+const toB64 = blob => new Promise((res, rej) => {
+  const fr = new FileReader(); fr.onload = () => res(fr.result.split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob);
+});
+function stemOf(name) {
+  const base = name.split(/[\\/]/).pop().replace(/\.(png|jpe?g|webp|gif|bmp)$/i, "").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").trim();
+  return base || "formula";
+}
+async function saveSingle(blob, name) {
   // 桌面視窗：pywebview 會擋下載，改走另存新檔對話框
-  if (window.pywebview && window.pywebview.api && window.pywebview.api.save_file) {
-    const b64 = await new Promise((res, rej) => {
-      const fr = new FileReader();
-      fr.onload = () => res(fr.result.split(",")[1]);
-      fr.onerror = rej;
-      fr.readAsDataURL(blob);
-    });
-    const path = await window.pywebview.api.save_file(name, b64);
-    setStatus(path ? "已儲存：" + path : "已取消儲存", path ? "ok" : "");
+  if (isDesktop()) {
+    const path = await window.pywebview.api.save_file(name, await toB64(blob));
+    if (path) status("m_saved", { path }, "ok"); else status("m_save_cancel");
     return;
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-  setStatus("已下載：" + name + "（瀏覽器的下載資料夾）", "ok");
+  status("m_downloaded", { name }, "ok");
 }
-$("svgBtn").onclick = () => busy($("svgBtn"), "匯出 SVG 中", async () => download(await exportAs("svg"), "formula.svg"));
-$("pdfBtn").onclick = () => busy($("pdfBtn"), "匯出 PDF 中", async () => download(await exportAs("pdf"), "formula.pdf"));
-$("accBtn").onclick = () => busy($("accBtn"), "以 LaTeX 編譯中", async () => {
-  const img = document.createElement("img"); img.src = URL.createObjectURL(await exportAs("svg"));
-  $("preview").replaceChildren(img);
-  setStatus("精準預覽完成（真 LaTeX 編譯結果）", "ok");
-});
-$("copyBtn").onclick = async () => {
-  try { await navigator.clipboard.writeText($("latex").value); setStatus("已複製 LaTeX", "ok"); }
-  catch (e) { setErr("複製失敗：" + e.message); }
-};
+// 匯出格式：核取方塊，可複選（至少要留一個）；選擇存在伺服器端的設定檔
+const FMT_LABEL = { svg: "SVG", pdf: "PDF", tex: ".tex" };
+const fmtBoxes = [...document.querySelectorAll(".fmt")];
+const selectedFormats = () => fmtBoxes.filter(b => b.checked).map(b => b.value);
+fmtBoxes.forEach(b => b.addEventListener("change", () => {
+  if (!selectedFormats().length) { b.checked = true; status("m_fmt_min"); return; }
+  saveSettings({ formats: selectedFormats() });
+}));
 
+async function runExport(list, scopeKey) {
+  const scope = t(scopeKey);
+  if (!list.length) { errKey("m_exp_empty", { scope }); return; }
+  flushPersist();
+  const fmts = selectedFormats(), fmtText = fmts.map(f => FMT_LABEL[f]).join(t("sep2"));
+  const ready = list.filter(hasResult), skipped = list.length - ready.length;
+  if (!ready.length) { errKey("m_exp_none", { scope }); return; }
+  setBusy(true); status("m_exporting", { fmts: fmtText, n: ready.length });
+  try {
+    const skipNote = skipped ? t("n_skip_unrec", { n: skipped }) : "";
+    if (ready.length === 1 && fmts.length === 1) {   // 只有 1 個檔案：直接另存新檔 / 下載
+      await saveSingle(await exportOne(fmts[0], ready[0].latex), stemOf(ready[0].name) + "." + fmts[0]);
+      if (skipped) setStatus($("msg").textContent + skipNote, $("msg").className);
+      return;
+    }
+    const r = await check(await apiFetch("/api/export/batch", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ formats: fmts, items: ready.map(it => ({ name: it.name, latex: it.latex })) }) }));
+    const ok = +r.headers.get("X-Ok-Count"), fail = +r.headers.get("X-Fail-Count");
+    const blob = await r.blob();
+    const failNote = fail ? t("n_fail_see", { n: fail }) : "";
+    if (isDesktop() && window.pywebview.api.save_zip_to_folder) {
+      const res = await window.pywebview.api.save_zip_to_folder(await toB64(blob));
+      if (!res) { status("m_exp_cancel"); return; }
+      setStatus(t("m_exp_folder", { n: ok, fmts: fmtText, dir: res.dir, fail: failNote, skip: skipNote }), fail ? "err" : "ok");
+    } else {
+      const name = `mathtran-export-${fmts.join("-")}.zip`;
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+      setStatus(t("m_exp_zip", { name, n: ok, fmts: fmtText, fail: failNote, skip: skipNote }), fail ? "err" : "ok");
+    }
+  } catch (e) { setErr(e.message); }
+  finally { setBusy(false); }
+}
+$("expSel").onclick = () => runExport(cur() ? [cur()] : [], "scope_sel");
+$("expChk").onclick = () => runExport(checked(), "scope_chk");
+$("expAll").onclick = () => runExport([...S.items], "scope_all");
+
+// ====================== 快取管理 ======================
+async function refreshCacheInfo() {
+  const s = await (await apiFetch("/api/cache")).json();
+  const kb = (s.bytes / 1024).toFixed(1);
+  $("cacheInfo").replaceChildren();
+  const line = document.createElement("div");
+  line.textContent = t("cd_count", { n: s.count }) + (s.count ? t("cd_detail", { e: s.edited, kb }) : "");
+  const path = document.createElement("code"); path.textContent = s.path;
+  $("cacheInfo").append(line, path);
+  $("cacheClearAll").disabled = S.busy || s.count === 0;
+  $("cacheClearList").textContent = t("cd_clear_list", { n: S.items.length });
+  $("cacheClearList").disabled = S.busy || S.items.length === 0;
+  return s;
+}
+$("cacheBtn").onclick = async () => {
+  try { await refreshCacheInfo(); $("cacheDlg").showModal(); } catch (e) { errKey("m_cache_info_fail", { err: e.message }); }
+};
+$("cacheClose").onclick = () => $("cacheDlg").close();
+// 清除後，清單內項目的結果也一併清掉（否則畫面上還顯示「已快取」卻其實沒有快取，會讓人困惑）
+function resetResults(list) {
+  for (const it of list) {
+    clearTimeout(persistTimers.get(it.id)); persistTimers.delete(it.id);   // 避免待存的修改又把快取寫回去
+    if (it.acc) URL.revokeObjectURL(it.acc.url);
+    Object.assign(it, { latex: null, base: null, edited: false, fromCache: false, acc: null, state: "idle", error: null });
+  }
+  S.pv = "live";
+  renderList(); syncRight();
+}
+async function clearCache(scope) {
+  if (S.busy) { errKey("m_busy_no_clear"); return; }
+  flushPersist();
+  const list = [...S.items];
+  const editedInList = list.filter(i => i.edited).length;
+  const s = await (await apiFetch("/api/cache")).json();
+  const msg = scope === "all"
+    ? t("c_clear_all", { n: s.count }) + (s.edited ? t("c_edited_all", { e: s.edited }) : "")
+    : t("c_clear_list", { n: list.length }) + (editedInList ? t("c_edited_list", { e: editedInList }) : "");
+  if ((scope === "all" || editedInList) && !confirm(msg)) return;
+  try {
+    const r = scope === "all"
+      ? await check(await apiFetch("/api/cache", { method: "DELETE" }))
+      : await check(await apiFetch("/api/cache/remove", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hashes: list.map(i => i.hash) }) }));
+    const { removed } = await r.json();
+    resetResults(list);
+    $("cacheDlg").close();
+    setStatus(t("m_cache_cleared", { n: removed }) + (list.length ? t("m_cache_cleared_list", { n: list.length }) : ""), "ok");
+  } catch (e) { setErr(e.message); }
+}
+$("cacheClearAll").onclick = () => clearCache("all");
+$("cacheClearList").onclick = () => clearCache("list");
+
+// ====================== API key / 健康狀態 ======================
 $("keyBtn").onclick = () => $("keyDlg").showModal();
 $("keySave").onclick = async () => {
   const k = $("keyIn").value.trim();
-  if (k) await fetch("/api/config", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ api_key:k }) });
+  if (k) await apiFetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: k }) });
   $("keyIn").value = ""; health();
-  if (k) setStatus("已儲存 API key", "ok");
+  if (k) status("m_key_saved", null, "ok");
 };
 async function health() {
-  const h = await (await fetch("/api/health")).json();
-  const item = (ok, good, bad) => ok ? good : `<span class="bad">${bad}</span>`;
-  $("health").innerHTML = item(h.api_key, "API key ✓", "⚠ 未設定 API key") + "　" +
-                          item(h.tectonic, "tectonic ✓", "⚠ 找不到 tectonic");
+  try {
+    const h = await (await apiFetch("/api/health")).json();
+    const item = (ok, good, bad) => ok ? t(good) : `<span class="bad">${t(bad)}</span>`;
+    $("health").innerHTML = item(h.api_key, "h_key_ok", "h_key_bad") + "　" + item(h.tectonic, "h_tec_ok", "h_tec_bad");
+    const dot = $("keyBtn").querySelector(".dot"); if (dot) dot.hidden = !!h.api_key;   // 還沒設定 API key：圖示右上角顯示紅點
+  } catch (e) { /* 伺服器暫時沒回應就維持原狀 */ }
 }
-health();
+
+// ====================== 啟動 ======================
+(async function init() {
+  try {
+    const r = await fetch("/api/settings");
+    if (r.ok) Object.assign(S.settings, await r.json());
+  } catch (e) { /* 讀不到就用預設值 */ }
+  LANG = resolveLang(S.settings.lang);
+  applyTheme();
+  $("thumbSize").value = S.settings.thumb; applyThumb(S.settings.thumb);
+  fmtBoxes.forEach(b => { b.checked = S.settings.formats.includes(b.value); });
+  applyStatic(); renderToolbar(); renderList(); syncRight();
+  status("ready");
+  health();
+})();
 </script>
 </body>
 </html>
