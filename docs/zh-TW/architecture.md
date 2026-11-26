@@ -36,7 +36,7 @@ flowchart LR
 | `cli.py` | 子指令 `ocr` / `render` / `convert` / `config` / `serve` / `gui` |
 | `server.py` | FastAPI：API 與靜態前端 |
 | `desktop.py` | pywebview 視窗、另存新檔 / 選資料夾匯出 API、視窗圖示 |
-| `web/index.html` | 單檔前端（圖片清單、批次辨識與匯出）；`web/vendor/` 內建 KaTeX（離線） |
+| `web/index.html` | 單檔前端（圖片清單、批次辨識與匯出）；`web/vendor/` 內建 KaTeX（即時預覽）與 MathLive（圖形編輯器），都可離線使用 |
 
 ## HTTP API
 
@@ -140,6 +140,7 @@ flowchart LR
 | 中文字型要用「名稱」 | tectonic 以檔案路徑指定字型（如 `C:/Windows/Fonts/msjh.ttc`）會失敗；改用系統字型名稱（`Microsoft JhengHei`）可行。可用 `MATHTRAN_CJK_FONT` 覆寫 |
 | 裸中文要包 `\text{}` | 數學模式不會畫出中文；`wrap_cjk_in_text` 會把不在 `\text{}` 內的 CJK 連續字元包起來（KaTeX 預覽端有對應的 JS 版本） |
 | 只在需要時載入 xeCJK | 內容不含 CJK 就不載入，避免無謂的字型相依與編譯時間 |
+| 圖形編輯器（MathLive） | 第一次按「圖形編輯」才用 `<script>` 載入 `vendor/mathlive/`（約 1.1MB，含字型），平常不增加啟動時間。兩種編輯方式共用 `applyEdit(value)`：圖形編輯器只在使用者輸入時（`input` 事件）以 `getValue("latex")` 寫回；換圖或切換模式時用 `setValue(…, {silenceNotifications:true})` 推入，所以單純「看」不會改到內容。中文用 `CJK_RUN` 包成 `\text{}` 後才推入；長公式換行：MathLive 沒有換行選項（超出欄位的部分只隨游標捲動），所以在它的 shadow DOM 裡附加一段樣式（`GFX_WRAP_CSS`）讓最上層各項可折行，欄位高度跟著變高；這依賴它內部的 class 名稱（`.ML__latex` / `.ML__content`），升級 MathLive 時要重新確認；虛擬鍵盤用 `manual` 政策（只在按鍵盤圖示時出現），並關閉按鍵音效 |
 | LaTeX 編輯區的語法標色 | 不引入編輯器套件：透明的 `<textarea>` 疊在同尺寸的 `<pre id="hl">` 上，`hlTokens()` 把內容切成指令 / 括號 / 數字 / 文字 / 註解並上色，`hlRender()` 重畫。兩層的字型、邊框、內距、換行、`scrollbar-gutter` 必須完全一致，字才會對齊（`tests/test_highlight.py` 以 node 測標記器與配色對比）；`textarea::selection` 要半透明，否則選取底色會蓋住下層的字；游標旁的括號配對在 `keyup` / `mouseup` / `focus` 時更新 |
 | 桌面版匯出走另存新檔對話框 | pywebview 預設擋下載（`ALLOW_DOWNLOADS`），所以前端偵測 `window.pywebview.api.save_file`，改以 `js_api` 儲存 |
 | **`js_api` 物件不要放公開屬性參照 window** | pywebview 會遞迴走訪 `js_api` 的**所有不以底線開頭的屬性**；若把 `Window` 物件放在公開屬性，會走進 WinForms 原生控制項，造成約每 6 次啟動 1 次的間歇性整個程式卡死。因此一律用 `_window` |

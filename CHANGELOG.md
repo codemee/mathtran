@@ -5,12 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-26
+
 ### 繁體中文
 
+- 新增**圖形化編輯器**：編輯區上方的「LaTeX 文字 / 圖形編輯」切換鈕，按「圖形編輯」可直接在公式上點選、輸入，或用虛擬鍵盤插入分數、根號、積分等；長公式會自動換行；與 LaTeX 文字框同步，完全離線（內建 MathLive，第一次按下時才載入）
 - LaTeX 編輯區新增**語法標色**：指令、大括號、上下標、數字、`\text{}` 內的文字與註解各有顏色（淺色 / 深色配色都有對應）；游標在括號旁時成對的括號會反白，沒有配對的括號會畫紅色波浪底線
 
 ### English
 
+- New **visual editor**: use the "LaTeX text / Visual editor" switch above the editor, and "Visual editor" lets you click and type right on the formula, or insert fractions, roots and integrals from a virtual keyboard; long formulas wrap onto the next line; it stays in sync with the LaTeX text box and works fully offline (MathLive is bundled and loaded on first use)
 - The LaTeX editor now has **syntax highlighting**: commands, braces, super/subscripts, numbers, text inside `\text{}` and comments each get a color (for both light and dark themes); the matching brace is highlighted next to the caret and unmatched braces get a red wavy underline
 
 ## [0.1.2] - 2026-11-26
@@ -73,6 +77,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.3]: https://github.com/codemee/mathtran/releases/tag/v0.1.3
 [0.1.2]: https://github.com/codemee/mathtran/releases/tag/v0.1.2
 [0.1.1]: https://github.com/codemee/mathtran/releases/tag/v0.1.1
 [0.1.0]: https://github.com/codemee/mathtran/releases/tag/v0.1.0

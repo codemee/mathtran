@@ -72,7 +72,8 @@ def run(result_path: str | Path) -> int:
         check("index_page", code == 200 and b"MathTran" in body and b'id="toolbar"' in body, f"HTTP {code}")
         check("page_title_has_version", f"<title>{APP_TITLE}</title>".encode() in body, APP_TITLE)
         for path in ("/vendor/katex.min.js", "/vendor/katex.min.css",
-                     "/vendor/fonts/KaTeX_Main-Regular.woff2", "/icon.svg"):
+                     "/vendor/fonts/KaTeX_Main-Regular.woff2", "/vendor/mathlive/mathlive.min.js",
+                     "/vendor/mathlive/fonts/KaTeX_Main-Regular.woff2", "/icon.svg"):
             code, body = _call(base, path)
             check(f"asset {path}", code == 200 and len(body) > 100, f"HTTP {code}")
 

@@ -147,6 +147,21 @@ The editor **colors** the LaTeX so the structure of a long formula is easy to se
 - With the cursor next to a `{` or `}`, the matching brace is **highlighted** too
 - An unmatched brace gets a **red wavy underline**, so a missing `}` is easy to find
 - Highlighting is display only; the LaTeX text is copied, saved and compiled exactly as before
+#### Visual editor
+
+Edit a formula without knowing LaTeX syntax: above the editor there are two switches, **LaTeX text** and **Visual editor**; click **Visual editor** to replace the text box with a visual formula editor (click **LaTeX text** to go back).
+
+![Visual editor: click and type right on the formula](https://raw.githubusercontent.com/codemee/mathtran/main/docs/images/editor-visual.png)
+
+- Type right on the formula; `/` makes a fraction, `^` a superscript, `_` a subscript, `sqrt` a root
+- Click the **keyboard icon** at the right of the field to open the virtual keyboard and insert fractions, roots, integrals, Greek letters and more with buttons
+
+![Virtual keyboard](https://raw.githubusercontent.com/codemee/mathtran/main/docs/images/editor-visual-keyboard.png)
+
+- A formula that is too long **wraps onto the next line** instead of being cut off
+- Both ways of editing stay **in sync**: changes in the visual editor go straight to the LaTeX text box and the preview, and are saved to the cache
+- Merely switching does not mark the result as "edited"; the visual editor may tidy the source into equivalent standard LaTeX (for example `\frac12` → `\frac{1}{2}`)
+- Works fully offline ([MathLive](https://mathlive.io/) is bundled and loaded the first time you click)
 #### The preview area
 
 Three **transparent-background** buttons sit on top of the preview, at its top right:

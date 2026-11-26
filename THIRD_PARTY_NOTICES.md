@@ -6,6 +6,7 @@ This project is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)).
 | 元件 Component | 用途 Use | 授權 License | 與 GPL-3.0 相容 Compatible | 隨專案散布 Bundled |
 |---|---|---|---|---|
 | [KaTeX](https://katex.org/) 0.16.11 | 即時預覽 Live preview (`src/mathtran/web/vendor/`) | MIT（全文 full text：[LICENSE-KaTeX.txt](src/mathtran/web/vendor/LICENSE-KaTeX.txt)）；KaTeX 字型 fonts: SIL OFL 1.1 / MIT | 是 Yes | 是 Yes |
+| [MathLive](https://mathlive.io/) 0.111.4 | 圖形化編輯器 Visual editor (`src/mathtran/web/vendor/mathlive/`) | MIT（全文 full text：[LICENSE-MathLive.txt](src/mathtran/web/vendor/mathlive/LICENSE-MathLive.txt)）；字型 fonts: KaTeX fonts (SIL OFL 1.1 / MIT) | 是 Yes | 是 Yes |
 | [Tectonic](https://tectonic-typesetting.github.io/) | 編譯 LaTeX Compile LaTeX | MIT | 是 Yes（獨立程式 separate program） | 否 No（另行安裝 install separately） |
 | [PyMuPDF](https://pymupdf.readthedocs.io/) | PDF → SVG | AGPL-3.0 / commercial | 是 Yes（見下 see below） | 否 No（Python 相依 Python dependency） |
 | [pywebview](https://pywebview.flowrl.com/) | 桌面視窗 Desktop window | BSD-3-Clause | 是 Yes | 否 No |
@@ -27,6 +28,7 @@ The Windows ZIP and macOS DMG are self-contained, so besides the Python dependen
 
 | 元件 Component | 授權 License | 說明 Notes |
 |---|---|---|
+| [MathLive](https://mathlive.io/) 0.111.4 | 圖形化編輯器 Visual editor (`src/mathtran/web/vendor/mathlive/`) | MIT（全文 full text：[LICENSE-MathLive.txt](src/mathtran/web/vendor/mathlive/LICENSE-MathLive.txt)）；字型 fonts: KaTeX fonts (SIL OFL 1.1 / MIT) | 是 Yes | 是 Yes |
 | [Tectonic](https://tectonic-typesetting.github.io/) | MIT | 安裝包內附 `TECTONIC_LICENSE.txt`。Included as `TECTONIC_LICENSE.txt`. |
 | Python 執行環境 runtime（PyInstaller） | PSF License / GPL-2.0 with bootloader exception | PyInstaller 的 bootloader 例外條款允許以任何授權散布打包後的程式。The bootloader exception allows distributing the frozen program under any license. |
 | 其他 Python 相依套件 Other Python dependencies | 見各套件 see each package（`uv.lock`） | 授權相容性同上表。Compatibility as in the table above. |

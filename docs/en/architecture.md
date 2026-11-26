@@ -36,7 +36,7 @@ The desktop app is just "a pywebview window + a local FastAPI server", sharing t
 | `cli.py` | Subcommands `ocr` / `render` / `convert` / `config` / `serve` / `gui` |
 | `server.py` | FastAPI: API plus static front end |
 | `desktop.py` | pywebview window, "Save as" / "choose folder" export APIs, window icon |
-| `web/index.html` | Single-file front end (image list, batch recognition and export); `web/vendor/` bundles KaTeX (offline) |
+| `web/index.html` | Single-file front end (image list, batch recognition and export); `web/vendor/` bundles KaTeX (live preview) and MathLive (visual editor), both usable offline |
 
 ## HTTP API
 
@@ -140,6 +140,7 @@ flowchart LR
 | CJK font by *name* | Selecting a font by file path (e.g. `C:/Windows/Fonts/msjh.ttc`) fails under tectonic; a system font *name* (`Microsoft JhengHei`) works. Override with `MATHTRAN_CJK_FONT` |
 | Bare CJK must be in `\text{}` | Math mode does not typeset Chinese; `wrap_cjk_in_text` wraps CJK runs that are not already inside `\text{}` (the KaTeX preview has an equivalent JS version) |
 | xeCJK only when needed | Not loaded unless the content has CJK, avoiding an unnecessary font dependency and compile time |
+| Visual editor (MathLive) | Loaded with a `<script>` from `vendor/mathlive/` (about 1.1 MB with fonts) only the first time "Visual editor" is clicked, so startup is unaffected. Both editing modes share `applyEdit(value)`: the visual editor writes back with `getValue("latex")` only on user input (`input` events); switching images or modes pushes content in with `setValue(…, {silenceNotifications:true})`, so merely looking never changes the content. Chinese is wrapped into `\text{}` with `CJK_RUN` before pushing; long formulas wrap: MathLive has no wrapping option (anything beyond the field is just scrolled with the caret), so a style (`GFX_WRAP_CSS`) is appended inside its shadow DOM to let the top-level items break lines and the field grow taller; this depends on its internal class names (`.ML__latex` / `.ML__content`) and must be rechecked when upgrading MathLive; the virtual keyboard uses the `manual` policy (only opens from the keyboard icon) and key sounds are off |
 | Syntax highlighting in the LaTeX editor | No editor library: a transparent `<textarea>` sits on a same-size `<pre id="hl">`; `hlTokens()` splits the text into commands / braces / numbers / text / comments and `hlRender()` repaints. Font, border, padding, wrapping and `scrollbar-gutter` must be identical on both layers or the text drifts (`tests/test_highlight.py` runs the tokenizer under node and checks color contrast); `textarea::selection` must be translucent, otherwise its background hides the layer below; the brace match next to the caret refreshes on `keyup` / `mouseup` / `focus` |
 | Desktop export uses "Save as" | pywebview blocks downloads by default (`ALLOW_DOWNLOADS`), so the front end detects `window.pywebview.api.save_file` and saves through `js_api` |
 | **Never expose `window` as a public attribute of the `js_api` object** | pywebview recursively walks **every attribute not starting with an underscore** of the `js_api` object. A public `Window` reference makes it walk into native WinForms controls, causing an intermittent whole-process freeze (about 1 in 6 launches). Always use `_window` |
