@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mathtran</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="stylesheet" href="/vendor/katex.min.css">
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#1d2230; --muted:#6b7385; --accent:#2f6fed; --line:#dfe3ea; --err:#c62828; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171f; --card:#1d2230; --fg:#e6e9f0; --muted:#8c94a8; --accent:#6c9bff; --line:#2d3446; --err:#ff8a80; }
+  }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,"Microsoft JhengHei",sans-serif }
+  header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--line) }
+  h1 { font-size:18px; margin:0 }
+  #status { color:var(--muted); font-size:13px }
+  main { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px 20px }
+  @media (max-width:800px) { main { grid-template-columns:1fr } }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px }
+  h2 { font-size:14px; margin:0; color:var(--muted); font-weight:600 }
+  #drop { border:2px dashed var(--line); border-radius:8px; min-height:220px; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); padding:10px; cursor:pointer }
+  #drop.over { border-color:var(--accent) }
+  #drop img { max-width:100%; max-height:320px }
+  textarea { width:100%; min-height:130px; font:14px/1.4 ui-monospace,Consolas,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; resize:vertical }
+  #preview { min-height:120px; display:flex; align-items:center; justify-content:center; overflow:auto; font-size:1.3em; padding:8px }
+  #preview img { max-width:100% }
+  .row { display:flex; gap:8px; flex-wrap:wrap }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer }
+  button.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent) }
+  button:disabled { opacity:.5; cursor:wait }
+  body { padding-bottom:44px }
+  #bar { position:fixed; left:0; right:0; bottom:0; display:flex; gap:16px; align-items:flex-start; justify-content:space-between;
+         padding:8px 20px; background:var(--card); border-top:1px solid var(--line); font-size:13px; color:var(--muted); z-index:10 }
+  #msg { flex:1; min-width:0; max-height:6.5em; overflow:auto; white-space:pre-wrap; word-break:break-all }
+  #msg.err { color:var(--err) }
+  #msg.ok { color:var(--fg) }
+  #health { white-space:nowrap; flex:none }
+  #health .bad { color:var(--err) }
+  dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg) }
+  dialog input { width:340px; padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px }
+</style>
+</head>
+<body>
+<header>
+  <h1><img src="/icon.svg" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:8px">Mathtran　圖片 → LaTeX</h1>
+  <button class="secondary" id="keyBtn">API key</button>
+</header>
+<main>
+  <section>
+    <h2>① 圖片（貼上 Ctrl+V / 拖曳 / 點選）</h2>
+    <div id="drop"><span id="dropHint">把含公式的圖片拖到這裡，或直接貼上截圖</span></div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <div class="row"><button id="ocrBtn" disabled>辨識為 LaTeX</button></div>
+  </section>
+  <section>
+    <h2>② LaTeX（可編輯）</h2>
+    <textarea id="latex" spellcheck="false" placeholder="E = mc^2"></textarea>
+    <h2>③ 預覽</h2>
+    <div id="preview"></div>
+    <div class="row">
+      <button class="secondary" id="accBtn">精準預覽（真 LaTeX）</button>
+      <button id="svgBtn">匯出 SVG</button>
+      <button id="pdfBtn">匯出 PDF</button>
+      <button class="secondary" id="copyBtn">複製 LaTeX</button>
+    </div>
+  </section>
+</main>
+<footer id="bar"><span id="msg">就緒</span><span id="health"></span></footer>
+<dialog id="keyDlg">
+  <form method="dialog">
+    <p>輸入 Anthropic API key（儲存於本機 ~/.mathtran）</p>
+    <input id="keyIn" type="password" placeholder="sk-ant-...">
+    <div class="row" style="margin-top:10px"><button id="keySave" value="ok">儲存</button><button class="secondary" value="cancel">取消</button></div>
+  </form>
+</dialog>
+<script src="/vendor/katex.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let imgBlob = null;
+
+// 所有訊息（進度、成功、錯誤）都顯示在視窗底部狀態列
+function setStatus(text, kind) { $("msg").textContent = text; $("msg").className = kind || ""; }
+function setErr(m) {  // 空字串只會清掉「錯誤」，不影響其他訊息（如已儲存路徑）
+  if (m) setStatus(m, "err");
+  else if ($("msg").className === "err") setStatus("就緒");
+}
+// KaTeX 數學模式不認中文：把不在 \text{} 內的中日韓字元包進 \text{}
+const CJK_RUN = /(?<!\\text\{[^{}]*)[⺀-鿿豈-﫿＀-￯　-〿]+/g;
+function renderKatex() {
+  const src = ($("latex").value || "\\;").replace(CJK_RUN, "\\text{$&}");
+  try { katex.render(src, $("preview"), { displayMode:true, throwOnError:true, strict:"ignore" }); setErr(""); }
+  catch (e) { $("preview").textContent = ""; setErr(e.message); }
+}
+$("latex").addEventListener("input", renderKatex);
+
+function setImage(blob) {
+  imgBlob = blob;
+  const img = document.createElement("img");
+  img.src = URL.createObjectURL(blob);
+  $("drop").replaceChildren(img);
+  $("ocrBtn").disabled = false;
+}
+$("drop").onclick = () => $("file").click();
+$("file").onchange = e => e.target.files[0] && setImage(e.target.files[0]);
+$("drop").ondragover = e => { e.preventDefault(); $("drop").classList.add("over"); };
+$("drop").ondragleave = () => $("drop").classList.remove("over");
+$("drop").ondrop = e => { e.preventDefault(); $("drop").classList.remove("over"); const f = e.dataTransfer.files[0]; f && f.type.startsWith("image/") && setImage(f); };
+document.addEventListener("paste", e => {
+  for (const it of e.clipboardData.items) if (it.type.startsWith("image/")) { setImage(it.getAsFile()); break; }
+});
+
+async function busy(btn, label, fn) {
+  btn.disabled = true; setStatus(label + "…");
+  try { await fn(); } catch (e) { setErr(e.message); } finally { btn.disabled = false; }
+}
+async function check(r) {
+  if (r.ok) return r;
+  let msg = r.statusText;
+  try { msg = (await r.json()).detail || msg; } catch {}
+  throw new Error(msg);
+}
+
+$("ocrBtn").onclick = () => busy($("ocrBtn"), "辨識中", async () => {
+  const fd = new FormData(); fd.append("file", imgBlob, "image");
+  const r = await check(await fetch("/api/ocr", { method:"POST", body:fd }));
+  $("latex").value = (await r.json()).latex;
+  renderKatex();
+  setStatus("辨識完成", "ok");
+});
+
+async function exportAs(fmt) {
+  const r = await check(await fetch("/api/export/" + fmt, {
+    method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ latex:$("latex").value }) }));
+  return r.blob();
+}
+async function download(blob, name) {
+  // 桌面視窗：pywebview 會擋下載，改走另存新檔對話框
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.save_file) {
+    const b64 = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result.split(",")[1]);
+      fr.onerror = rej;
+      fr.readAsDataURL(blob);
+    });
+    const path = await window.pywebview.api.save_file(name, b64);
+    setStatus(path ? "已儲存：" + path : "已取消儲存", path ? "ok" : "");
+    return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setStatus("已下載：" + name + "（瀏覽器的下載資料夾）", "ok");
+}
+$("svgBtn").onclick = () => busy($("svgBtn"), "匯出 SVG 中", async () => download(await exportAs("svg"), "formula.svg"));
+$("pdfBtn").onclick = () => busy($("pdfBtn"), "匯出 PDF 中", async () => download(await exportAs("pdf"), "formula.pdf"));
+$("accBtn").onclick = () => busy($("accBtn"), "以 LaTeX 編譯中", async () => {
+  const img = document.createElement("img"); img.src = URL.createObjectURL(await exportAs("svg"));
+  $("preview").replaceChildren(img);
+  setStatus("精準預覽完成（真 LaTeX 編譯結果）", "ok");
+});
+$("copyBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText($("latex").value); setStatus("已複製 LaTeX", "ok"); }
+  catch (e) { setErr("複製失敗：" + e.message); }
+};
+
+$("keyBtn").onclick = () => $("keyDlg").showModal();
+$("keySave").onclick = async () => {
+  const k = $("keyIn").value.trim();
+  if (k) await fetch("/api/config", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ api_key:k }) });
+  $("keyIn").value = ""; health();
+  if (k) setStatus("已儲存 API key", "ok");
+};
+async function health() {
+  const h = await (await fetch("/api/health")).json();
+  const item = (ok, good, bad) => ok ? good : `<span class="bad">${bad}</span>`;
+  $("health").innerHTML = item(h.api_key, "API key ✓", "⚠ 未設定 API key") + "　" +
+                          item(h.tectonic, "tectonic ✓", "⚠ 找不到 tectonic");
+}
+health();
+</script>
+</body>
+</html>
