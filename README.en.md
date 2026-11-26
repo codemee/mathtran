@@ -13,10 +13,10 @@
 | Step | Description |
 |---|---|
 | ① Add images | **Work on many at once**: paste (Ctrl+V), drag in files or a whole folder, or use "Add files" / "Add folder" — at any time. Duplicates are skipped automatically. PNG / JPEG / WebP / GIF |
-| ② Recognize as LaTeX | A Claude vision model turns each image into LaTeX; recognize just the **selected** one, the **checked** ones, or **all**. Results are **cached**, so nothing is recognized twice |
+| ② Recognize as LaTeX | A Claude vision model turns each image into LaTeX; recognize just the **current** one (the one shown on the right), the **checked** ones, or **all**. Results are **cached**, so nothing is recognized twice |
 | ③ View and edit | Click an image on the left and its LaTeX appears on the right, ready to edit (edits are cached too) |
 | ④ Preview | Instant "live" preview (works offline), switchable to an "accurate" preview compiled with real LaTeX; formulas that are too long shrink automatically so the **whole formula stays visible** |
-| ⑤ Export | Export **SVG** (text converted to outlines), **PDF** and **LaTeX (.tex)** — **formats are multi-select** — again for the **selected**, **checked** or **all** images |
+| ⑤ Export | Export **SVG** (text converted to outlines), **PDF** and **LaTeX (.tex)** — **formats are multi-select** — again for the **current**, **checked** or **all** images |
 
 Three ways to use it, all sharing one core:
 
@@ -208,7 +208,7 @@ Use the slider above the list to change thumbnail size. Keyboard: arrow keys mov
 
 | Button | Applies to |
 |---|---|
-| 選取的 (Selected) | The one image currently selected (blue outline) |
+| 目前檢視 (Current) | The one image shown on the right (blue outline), not the ticked ones |
 | 勾選的 (n) (Checked) | Images with a tick |
 | 全部 (n) (All) | Every image in the list |
 

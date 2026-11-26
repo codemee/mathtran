@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-26
+
+### 繁體中文
+
+- 辨識與匯出的「選取的」按鈕改名為「**目前檢視**」（English：Current），避免和「勾選的」混淆；提示文字、確認訊息與文件一併更新
+
+### English
+
+- The "Selected" scope button for recognition and export is renamed "**Current**" (繁中：目前檢視) so it can't be confused with "Checked"; hints, confirmations and docs updated
+
 ## [0.1.3] - 2026-11-26
 
 ### 繁體中文
@@ -54,7 +64,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 ### 繁體中文
 
 - **多張圖片一次處理**：貼上、加入檔案、加入資料夾、拖曳都可以；內容相同的圖片自動略過
-- **辨識（Claude 視覺模型）**：可針對「選取的 / 勾選的 / 全部」辨識，批次時 3 張並行、可中途停止；圖上的**中文標題與說明文字**也會一併轉錄
+- **辨識（Claude 視覺模型）**：可針對「目前檢視 / 勾選的 / 全部」辨識，批次時 3 張並行、可中途停止；圖上的**中文標題與說明文字**也會一併轉錄
 - **辨識快取**：以圖片內容的 SHA-256 為鍵，辨識過的圖片不會重複呼叫 API；你手動修改的結果也會保留；介面內可查看與清除快取
 - **預覽**：即時預覽（KaTeX，離線）與精準預覽（真 LaTeX 編譯）可來回切換；太長的公式會自動縮小到完整可見
 - **匯出**：SVG / PDF / LaTeX（.tex）可複選；單張直接另存新檔，多個檔案則由你選資料夾（瀏覽器版下載 zip）
@@ -67,7 +77,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 ### English
 
 - **Work on many images at once**: paste, add files, add a folder, or drag and drop; identical images are skipped automatically
-- **Recognition (Claude vision model)** for the selected / checked / all images, 3 in parallel with a Stop button; **Chinese titles and notes in the image** are transcribed too
+- **Recognition (Claude vision model)** for the current / checked / all images, 3 in parallel with a Stop button; **Chinese titles and notes in the image** are transcribed too
 - **Recognition cache** keyed by the SHA-256 of the image, so nothing is recognized twice; your manual edits are kept; the cache can be viewed and cleared in the UI
 - **Preview**: switch back and forth between the live preview (KaTeX, offline) and the accurate preview (real LaTeX); long formulas shrink automatically so the whole formula stays visible
 - **Export**: SVG / PDF / LaTeX (.tex), multi-select; one file goes through "Save as", several files go to a folder you choose (a zip in the browser version)
@@ -77,6 +87,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.4]: https://github.com/codemee/mathtran/releases/tag/v0.1.4
 [0.1.3]: https://github.com/codemee/mathtran/releases/tag/v0.1.3
 [0.1.2]: https://github.com/codemee/mathtran/releases/tag/v0.1.2
 [0.1.1]: https://github.com/codemee/mathtran/releases/tag/v0.1.1
