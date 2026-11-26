@@ -3,17 +3,23 @@
 格式依循 [Keep a Changelog](https://keepachangelog.com/)；版本號採 [語意化版本](https://semver.org/lang/zh-TW/)。
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.1] - 2026-11-26
+
+修正 Windows 安裝包的啟動問題。 / Fixes the Windows package failing to start.
 
 ### 繁體中文
 
 - **修正 Windows 安裝包一開啟就當掉**：用瀏覽器下載 ZIP 再解壓縮後，檔案會帶「來自網際網路」標記，.NET 因此拒絕載入 `Python.Runtime.dll`，出現 `Failed to resolve Python.Runtime.Loader.Initialize …`。安裝包現在附帶 `MathTran.exe.config` 允許載入這些元件
 - 雲端發布流程新增「開視窗」煙霧測試：模擬瀏覽器下載的 ZIP（每個檔案帶標記）並實際開啟視窗，這類問題今後會在發布前被擋下
+- macOS 安裝包從這個版本起只提供 Apple Silicon（arm64）；Intel Mac 請用 `uv tool install mathtran`
+- 只影響 Windows 的 ZIP；用 `uv tool install mathtran` 安裝的人不受影響
 
 ### English
 
 - **Fixed the Windows package crashing on launch**: files extracted from a browser-downloaded ZIP carry the "downloaded from the Internet" mark, so .NET refused to load `Python.Runtime.dll` (`Failed to resolve Python.Runtime.Loader.Initialize …`). The package now ships a `MathTran.exe.config` that allows loading these components
 - The release workflow gains a windowed smoke test: it simulates a browser-downloaded ZIP (every file marked) and really opens the window, so this kind of problem is caught before publishing
+- From this version the macOS package is Apple Silicon (arm64) only; on an Intel Mac use `uv tool install mathtran`
+- Only the Windows ZIP was affected; installing with `uv tool install mathtran` was never affected
 
 ## [0.1.0] - 2026-11-26
 
@@ -45,4 +51,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.1]: https://github.com/codemee/mathtran/releases/tag/v0.1.1
 [0.1.0]: https://github.com/codemee/mathtran/releases/tag/v0.1.0

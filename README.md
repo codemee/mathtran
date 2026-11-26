@@ -260,7 +260,7 @@ echo '\begin{pmatrix}a&b\\c&d\end{pmatrix}' | mathtran render - -o matrix.svg
 | 狀態列顯示「⚠ 找不到 tectonic」 | 執行 `scoop install tectonic`（或 `brew install tectonic`），重開 MathTran |
 | 第一次匯出等很久 | Tectonic 正在下載套件，請保持連網並耐心等待 |
 | 找不到中文字型 | 安裝字型，或設定 `MATHTRAN_CJK_FONT` 為你系統上的字型名稱 |
-| Windows 安裝包一開啟就出現「Unhandled exception in script」，內容有 `Failed to resolve Python.Runtime.Loader.Initialize …` | 這是 **0.1.0 的 Windows 安裝包才有的問題**（瀏覽器下載的 ZIP 解壓縮後，檔案帶有「來自網際網路」標記，.NET 因此拒絕載入元件），之後的版本已修正。0.1.0 的解法：把資料夾裡所有檔案解除封鎖——在 PowerShell 執行 `Get-ChildItem -Recurse <解壓縮後的資料夾> \| Unblock-File`，或對 ZIP 按右鍵 →「內容」→ 勾選「解除封鎖」後**重新解壓縮** |
+| Windows 安裝包一開啟就出現「Unhandled exception in script」，內容有 `Failed to resolve Python.Runtime.Loader.Initialize …` | 這是 **0.1.0 的 Windows 安裝包才有的問題**（瀏覽器下載的 ZIP 解壓縮後，檔案帶有「來自網際網路」標記，.NET 因此拒絕載入元件），**0.1.1 起已修正**。0.1.0 的解法：把資料夾裡所有檔案解除封鎖——在 PowerShell 執行 `Get-ChildItem -Recurse <解壓縮後的資料夾> \| Unblock-File`，或對 ZIP 按右鍵 →「內容」→ 勾選「解除封鎖」後**重新解壓縮** |
 | 辨識結果不對 | 辨識結果可以直接在文字框修改；圖片盡量裁切到只剩公式、解析度高一點 |
 | 按了辨識卻說「都已有辨識結果」 | 已辨識過的圖片會略過；要重辨請勾選「忽略快取」。（已經在清單裡的舊結果不會自動更新；把它們移除再重新加入，或勾「忽略快取」重辨） |
 | 圖上的中文沒有被辨識出來 | 舊版會漏掉文字；新版會連中文一起轉錄。舊結果請移除後重新加入再辨識，或勾「忽略快取」 |
