@@ -155,6 +155,8 @@ flowchart LR
 | 測試與快取隔離 | `tests/conftest.py` 自動把 `config.CONFIG_PATH` 指到暫存資料夾，避免測試污染你真正的快取；`cache_path()` 每次呼叫才計算路徑 |
 | PyMuPDF 要限定 1.x（`pymupdf>=1.28,<2`） | 2.x 把 `pymupdf-layout`、`pymupdf4llm`、`onnxruntime`、`numpy` 等一整串東西列為必要相依。後果：安裝包大幅變大（ZIP 117 MB → 65 MB）、`onnxruntime` 沒有 macOS Intel 的安裝檔（雲端的 Intel 打包因此失敗）、`pymupdf-layout` / `pymupdf4llm` 在 PyPI 上沒有宣告授權。我們只用最基本的功能（開 PDF、轉 SVG、畫圖示），1.x 完全夠用 |
 | `print` 中文在 CI 的 Windows 會當掉 | CI 的 Windows 主控台預設編碼是 cp1252，印中文會 `UnicodeEncodeError`（打包其實成功了，卻在最後一行失敗）。建置腳本一開始就把 stdout / stderr 改成 UTF-8 |
+| 瀏覽器下載的 ZIP 解壓縮後 .NET 拒絕載入元件 | 檔案帶「來自網際網路」標記（Mark of the Web）時，.NET Framework 預設拒絕載入，pywebview 的 pythonnet 因此失敗。解法：附 `MathTran.exe.config`（`loadFromRemoteSources`）。**測試時用 `gh` 下載、PowerShell 解壓縮都不會帶標記，所以一開始完全沒發現**；現在有 `packaging/smoke_window.ps1` 專門模擬這個情境 |
+| 帶標記的 exe 不能用 `Start-Process` 啟動 | 經過 shell 啟動會跳出「無法驗證發行者」對話框並卡住；測試改用 `CreateProcess`（`UseShellExecute = false`） |
 | `tr()` 的第一個參數要 positional-only | 訊息的佔位符可能叫 `key` / `name`，若 `tr(key, **kw)` 的參數也叫 `key` 就會撞名（`got multiple values for argument`）。改成 `tr(message_id, /, **kw)` |
 | 純 ASGI middleware | 用 `BaseHTTPMiddleware` 時 contextvar 在 FastAPI 於執行緒池跑的同步端點裡不一定可靠；寫成純 ASGI（`__call__(scope, receive, send)`）才穩，並有「24 個中英文請求同時送出，訊息不互相混到」的測試 |
 | 螢幕擷取工具要防「拍到別的視窗」 | `packaging/screenshots.py` 抓的是螢幕畫面：視窗被蓋住就會拍到其他內容（可能含隱私）。因此擷取前會設為最上層並確認為前景視窗，做不到就報錯、不寫檔 |

@@ -76,6 +76,21 @@ What it checks: the server starts, the **bundled** Tectonic is the one in use (n
 
 CI runs it on the **unzipped ZIP** and the **mounted DMG** — i.e. on the file users actually get, not on the build folder.
 
+### Windows: windowed smoke test
+
+The self-test **opens no window**, so it cannot catch problems at the window level. That is how 0.1.0 shipped with a bug: when the ZIP is downloaded with a browser and extracted, every file carries the "downloaded from the Internet" mark (Mark of the Web), so .NET refuses to load pythonnet's `Python.Runtime.dll` and the window crashes on launch (`Failed to resolve Python.Runtime.Loader.Initialize …`). Both CI and my own tests downloaded with `gh` and extracted with PowerShell, and neither of those adds the mark, so it went unnoticed.
+
+The fix is a [`MathTran.exe.config`](https://github.com/codemee/mathtran/blob/main/packaging/MathTran.exe.config) (`loadFromRemoteSources`) next to the exe, which `build_dist.py` puts into the ZIP.
+
+[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) imitates what a user does: extract → **mark every file** (`Zone.Identifier`, ZoneId=3) → really open the window → wait for the window title to become `MathTran`; an `Unhandled exception` window, an early exit or a timeout fails it. CI's `build-windows` runs it, and you can run it locally too:
+
+```powershell
+pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<version>-windows-x64.zip           # marked (should pass)
+pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<version>-windows-x64.zip -NoMotw   # control: no mark
+```
+
+> The test starts the exe with `CreateProcess` rather than `Start-Process`: when a marked exe is launched through the shell, Windows shows a "publisher could not be verified" dialog and waits for an answer, which would hang the script.
+
 ## Building locally
 
 ```bash

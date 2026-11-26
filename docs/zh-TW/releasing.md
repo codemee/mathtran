@@ -76,6 +76,21 @@ flowchart TD
 
 雲端會對「解壓縮後的 ZIP」和「掛載後的 DMG」各做一次，也就是檢查**使用者實際拿到的檔案**，而不是建置資料夾。
 
+### Windows：開視窗煙霧測試
+
+自我檢查**不會開視窗**，所以抓不到「視窗那一層」的問題。0.1.0 就因此漏掉一個 bug：用瀏覽器下載 ZIP、解壓縮後，每個檔案都帶「來自網際網路」標記（Mark of the Web），.NET 因此拒絕載入 pythonnet 的 `Python.Runtime.dll`，視窗一開就當掉（`Failed to resolve Python.Runtime.Loader.Initialize …`）。雲端和我自己的測試都是用 `gh` 下載、用 PowerShell 解壓縮，這兩種做法都**不會**帶標記，所以沒遇到。
+
+修法是在 exe 旁邊附一個 [`MathTran.exe.config`](https://github.com/codemee/mathtran/blob/main/packaging/MathTran.exe.config)（`loadFromRemoteSources`），由 `build_dist.py` 放進 ZIP。
+
+[`packaging/smoke_window.ps1`](https://github.com/codemee/mathtran/blob/main/packaging/smoke_window.ps1) 會模擬使用者的做法：解壓縮 → **替每個檔案加上標記**（`Zone.Identifier`，ZoneId=3）→ 真的開視窗 → 等視窗標題變成 `MathTran`；出現 `Unhandled exception` 視窗、提早結束或逾時就失敗。雲端的 `build-windows` 會執行它；本機也可以跑：
+
+```powershell
+pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<版本>-windows-x64.zip           # 帶標記（應該通過）
+pwsh packaging/smoke_window.ps1 -Zip dist\MathTran-<版本>-windows-x64.zip -NoMotw   # 對照組：不帶標記
+```
+
+> 這個測試用 `CreateProcess` 啟動 exe，而不是 `Start-Process`：帶標記的 exe 經過 shell 啟動時，Windows 會跳出「無法驗證發行者」的對話框並一直等待，腳本就卡住了。
+
 ## 在本機打包
 
 ```bash

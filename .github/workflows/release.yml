@@ -130,6 +130,12 @@ jobs:
           $p = Start-Process "$env:RUNNER_TEMP\unzipped\MathTran\MathTran.exe" -PassThru -Wait -WindowStyle Hidden
           Get-Content selftest.json
           if ($p.ExitCode -ne 0) { throw "打包後的程式自我檢查失敗（結束代碼 $($p.ExitCode)）" }
+      - name: 開視窗煙霧測試（模擬瀏覽器下載的 ZIP：每個檔案都帶「來自網際網路」標記）
+        shell: pwsh
+        run: |
+          $zip = (Get-ChildItem dist\MathTran-*-windows-x64.zip).FullName
+          pwsh -NoProfile -File packaging\smoke_window.ps1 -Zip $zip
+          if ($LASTEXITCODE -ne 0) { throw "帶標記的 ZIP 無法正常開啟視窗（見上方記錄）" }
       - uses: actions/upload-artifact@v7
         with:
           name: dist-windows

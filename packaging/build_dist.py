@@ -70,6 +70,9 @@ def build_pyinstaller() -> None:
 def make_zip_windows(ver: str) -> Path:
     folder = PYI_DIST / "MathTran"
     notice_files(ver, folder)
+    # 瀏覽器下載的 ZIP 解壓縮後會帶「來自網際網路」標記，.NET 預設會拒絕載入帶標記的 Python.Runtime.dll；
+    # 這個設定檔讓它照常載入（原因與測試見 packaging/MathTran.exe.config 與 packaging/smoke_window.ps1）
+    shutil.copy2(ROOT / "packaging" / "MathTran.exe.config", folder / "MathTran.exe.config")
     out = DIST / f"MathTran-{ver}-windows-x64"
     return Path(shutil.make_archive(str(out), "zip", root_dir=PYI_DIST, base_dir="MathTran"))
 

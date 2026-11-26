@@ -3,6 +3,18 @@
 格式依循 [Keep a Changelog](https://keepachangelog.com/)；版本號採 [語意化版本](https://semver.org/lang/zh-TW/)。
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### 繁體中文
+
+- **修正 Windows 安裝包一開啟就當掉**：用瀏覽器下載 ZIP 再解壓縮後，檔案會帶「來自網際網路」標記，.NET 因此拒絕載入 `Python.Runtime.dll`，出現 `Failed to resolve Python.Runtime.Loader.Initialize …`。安裝包現在附帶 `MathTran.exe.config` 允許載入這些元件
+- 雲端發布流程新增「開視窗」煙霧測試：模擬瀏覽器下載的 ZIP（每個檔案帶標記）並實際開啟視窗，這類問題今後會在發布前被擋下
+
+### English
+
+- **Fixed the Windows package crashing on launch**: files extracted from a browser-downloaded ZIP carry the "downloaded from the Internet" mark, so .NET refused to load `Python.Runtime.dll` (`Failed to resolve Python.Runtime.Loader.Initialize …`). The package now ships a `MathTran.exe.config` that allows loading these components
+- The release workflow gains a windowed smoke test: it simulates a browser-downloaded ZIP (every file marked) and really opens the window, so this kind of problem is caught before publishing
+
 ## [0.1.0] - 2026-11-26
 
 第一個公開版本。 / First public release.
