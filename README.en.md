@@ -129,6 +129,24 @@ Everything is drawn in flat, solid colors — there are no gradients. The text c
 4. Click **精準** (Accurate) at the top right of the preview to see the real LaTeX typesetting (click **即時** (Live) to switch back)
 5. At the bottom right, tick the formats to export (SVG / PDF / LaTeX, multi-select), then pick a scope and click **匯出** (Export)
 
+#### The LaTeX editor
+
+The editor **colors** the LaTeX so the structure of a long formula is easy to see (with matching colors in the light and dark themes):
+
+![Syntax highlighting in the LaTeX editor (top: light, bottom: dark)](https://raw.githubusercontent.com/codemee/mathtran/main/docs/images/editor-highlight.png)
+
+| Colored | Example |
+|---|---|
+| Commands | `\frac`, `\sqrt`, `\,`, `\\` |
+| Braces `{ }` | `\frac{a}{b}` |
+| `^` `_` `&` | superscript, subscript, alignment |
+| Numbers | `3.5` |
+| Text and Chinese inside `\text{…}` | `\text{面積}` |
+| Comments (grey italic) | `% note` |
+
+- With the cursor next to a `{` or `}`, the matching brace is **highlighted** too
+- An unmatched brace gets a **red wavy underline**, so a missing `}` is easy to find
+- Highlighting is display only; the LaTeX text is copied, saved and compiled exactly as before
 #### The preview area
 
 Three **transparent-background** buttons sit on top of the preview, at its top right:

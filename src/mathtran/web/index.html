@@ -17,18 +17,22 @@
   :root { color-scheme: light dark;
           --bg:#eef1f6; --card:#ffffff; --fg:#16233a; --muted:#5d6b82; --line:#d5dce8;
           --accent:#1d4fa8; --accent-solid:#1d4fa8; --on-accent:#ffffff;
-          --err:#c8202b; --err-solid:#d7262c; --ok:#216a3f; --cache:#0b6479; --edit:#8a5600; --sel:#e3ebf8; }
+          --err:#c8202b; --err-solid:#d7262c; --ok:#216a3f; --cache:#0b6479; --edit:#8a5600; --sel:#e3ebf8;
+          /* LaTeX 語法標色（對 --bg 的對比都 ≥ 4.5:1） */
+          --tk-cmd:#1558d6; --tk-text:#0b6b3a; --tk-op:#b3261e; --tk-num:#8a4b00; --tk-brace:#7b3fa6; --tk-cmt:#5d6b82; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
           --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
           --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
-          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42; }
+          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42;
+          --tk-cmd:#6fa8ff; --tk-text:#6ee7a0; --tk-op:#ff8a80; --tk-num:#ffc27a; --tk-brace:#e0a8ff; --tk-cmt:#9b90b8; }
   }
   :root[data-theme="light"] { color-scheme: light; }
   :root[data-theme="dark"] { color-scheme: dark;
           --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
           --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
-          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42; }
+          --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42;
+          --tk-cmd:#6fa8ff; --tk-text:#6ee7a0; --tk-op:#ff8a80; --tk-num:#ffc27a; --tk-brace:#e0a8ff; --tk-cmt:#9b90b8; }
 
   * { box-sizing:border-box }
   body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,"Microsoft JhengHei",sans-serif; padding-bottom:44px }
@@ -100,6 +104,20 @@
   #orig img { max-width:100%; max-height:148px; object-fit:contain }
   #orig:empty::before { content:attr(data-empty); color:#8c94a8; font-size:13px }
   textarea { width:100%; min-height:100px; font:14px/1.4 ui-monospace,Consolas,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; resize:vertical }
+  /* LaTeX 編輯區：透明的 textarea 疊在標色層（#hl）上；兩者的字型、邊框、內距、換行、捲軸槽完全一致，字才會對齊 */
+  .ed { position:relative; background:var(--bg); border-radius:8px }
+  .ed > * { margin:0; box-sizing:border-box; font:14px/1.4 ui-monospace,Consolas,monospace;
+            letter-spacing:0; tab-size:4; border:1px solid transparent; border-radius:8px; padding:8px;
+            white-space:pre-wrap; overflow-wrap:break-word; word-break:normal; scrollbar-gutter:stable }
+  .ed textarea { display:block; width:100%; height:104px; min-height:100px; background:transparent; color:transparent; caret-color:var(--fg); border-color:var(--line); overflow-y:auto }
+  #hl { position:absolute; inset:0 }   /* 大小跟著 textarea（使用者拖曳調整高度時一起變） */
+  .ed textarea::selection { background:color-mix(in srgb, var(--accent) 30%, transparent); color:transparent }
+  .ed textarea:disabled { opacity:1 }
+  #hl { color:var(--fg); overflow:hidden; pointer-events:none }
+  #hl .c { color:var(--tk-cmd) } #hl .t { color:var(--tk-text) } #hl .o { color:var(--tk-op) } #hl .n { color:var(--tk-num) }
+  #hl .b { color:var(--tk-brace) } #hl .k { color:var(--tk-cmt); font-style:italic }
+  #hl .m { background:color-mix(in srgb, var(--accent) 28%, transparent); border-radius:2px; font-weight:700 }
+  #hl .u { text-decoration:underline wavy var(--err); text-underline-offset:3px }
   /* 預覽區：公式會自動縮小到完整可見（見 fitPreview）；用一般區塊 + text-align 置中，
      不用 flex 置中——flex 置中在內容太寬時左側會被切掉而且捲不到 */
   #pvBox { position:relative; border:1px solid var(--line); border-radius:10px; background:var(--card) }
@@ -168,7 +186,7 @@
   <section id="right">
     <h2><span class="step">2</span><span data-i18n="step2">辨識結果</span> <span id="curName" class="hint"></span><span id="curBadge"></span></h2>
     <div id="orig"></div>
-    <textarea id="latex" spellcheck="false" disabled></textarea>
+    <div class="ed"><pre id="hl" aria-hidden="true"></pre><textarea id="latex" spellcheck="false" disabled></textarea></div>
     <h2><span class="step">3</span><span data-i18n="step3">預覽</span></h2>
     <div id="pvBox">
       <div class="pv-tools">
@@ -603,11 +621,93 @@ function setBusy(b, cancellable) {
   updateCounts();
 }
 
+// ====================== LaTeX 語法標色 ======================
+// 透明的 textarea 疊在 #hl 上，#hl 畫出同樣的文字加上顏色；游標在 { } 旁邊時，把成對的括號一起標出來，沒有配對的括號畫紅色波浪底線。
+const HL_TEXT_CMDS = new Set(["text", "mbox", "textbf", "textit", "textrm", "textsf", "texttt"]);   // 這些指令的 {…} 裡是文字，不是數學
+const HL_ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
+const hlEsc = s => s.replace(/[&<>]/g, c => HL_ESC[c]);
+const HL_CJK = /[⺀-鿿豈-﫿＀-￯　-〿]+/y;
+function hlTokens(s) {
+  const toks = [], stack = [];
+  const push = (cls, text) => toks.push({ cls, text });
+  const open = () => { stack.push(toks.length); push("b", "{"); };
+  const close = () => {
+    const j = stack.pop(), me = toks.length;
+    push("b", "}");
+    if (j === undefined) toks[me].bad = true; else { toks[j].pair = me; toks[me].pair = j; }
+  };
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch === "%") { let e = s.indexOf("\n", i); if (e < 0) e = s.length; push("k", s.slice(i, e)); i = e; }
+    else if (ch === "\\") {
+      const m = /\\([A-Za-z]+)\*?/y; m.lastIndex = i;
+      const r = m.exec(s);
+      if (!r) { push("c", s.slice(i, i + 2)); i += 2; continue; }   // \\  \,  \{  \% 之類：單一符號的指令
+      push("c", r[0]); i += r[0].length;
+      if (HL_TEXT_CMDS.has(r[1])) {
+        const sp = /\s*\{/y; sp.lastIndex = i;
+        const q = sp.exec(s);
+        if (q) {
+          if (q[0].length > 1) push("", q[0].slice(0, -1));
+          i += q[0].length; open();
+          let depth = 1, e = i;
+          while (e < s.length) {   // 找對應的 }；裡面的括號與跳脫字元都算在文字裡
+            if (s[e] === "\\") { e += 2; continue; }
+            if (s[e] === "{") depth++; else if (s[e] === "}" && --depth === 0) break;
+            e++;
+          }
+          e = Math.min(e, s.length);
+          if (e > i) push("t", s.slice(i, e));
+          i = e;
+          if (i < s.length) { close(); i++; }
+        }
+      }
+    }
+    else if (ch === "{") { open(); i++; }
+    else if (ch === "}") { close(); i++; }
+    else if ("^_&~".includes(ch)) { push("o", ch); i++; }
+    else if (/[0-9]/.test(ch)) { const m = /[0-9]+(?:\.[0-9]+)?/y; m.lastIndex = i; const t = m.exec(s)[0]; push("n", t); i += t.length; }
+    else {
+      HL_CJK.lastIndex = i;
+      const r = HL_CJK.exec(s);
+      if (r) { push("t", r[0]); i += r[0].length; continue; }
+      let e = i + 1;   // 一般文字：一路到下一個特殊字元
+      while (e < s.length && !"%\\{}^_&~0123456789".includes(s[e])) { HL_CJK.lastIndex = e; if (HL_CJK.test(s)) break; e++; }
+      push("", s.slice(i, e)); i = e;
+    }
+  }
+  for (const j of stack) toks[j].bad = true;   // 沒關起來的 {
+  return toks;
+}
+function hlRender() {
+  const ta = $("latex"), s = ta.value, toks = hlTokens(s);
+  let pos = 0, hot = -1;   // hot：游標旁邊那個括號在 toks 裡的位置
+  const caret = ta.selectionStart === ta.selectionEnd && document.activeElement === ta ? ta.selectionStart : -1;
+  const at = [];           // 每個 token 的起點
+  for (const k of toks) { at.push(pos); pos += k.text.length; }
+  if (caret >= 0) for (const p of [caret, caret - 1]) {   // 先看游標右邊、再看左邊
+    const j = at.indexOf(p);
+    if (j >= 0 && toks[j].cls === "b" && toks[j].text.length === 1) { hot = j; break; }
+  }
+  let html = "";
+  toks.forEach((k, j) => {
+    const cls = [k.cls, k.bad ? "u" : "", hot >= 0 && (j === hot || j === toks[hot].pair) ? "m" : ""].filter(Boolean).join(" ");
+    html += cls ? `<span class="${cls}">${hlEsc(k.text)}</span>` : hlEsc(k.text);
+  });
+  const hl = $("hl");
+  hl.innerHTML = html + (s.endsWith("\n") ? " " : "");   // 結尾的換行要補一個字元，兩邊的行數才會一樣
+  hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft;
+}
+$("latex").addEventListener("scroll", () => { $("hl").scrollTop = $("latex").scrollTop; $("hl").scrollLeft = $("latex").scrollLeft; });
+for (const ev of ["keyup", "mouseup", "focus", "blur", "select"]) $("latex").addEventListener(ev, hlRender);
+
 // ====================== 選取與右側顯示 ======================
 function syncRight() {
   const it = cur();
   $("latex").disabled = !it;
   $("latex").value = it && it.latex != null ? it.latex : "";
+  hlRender();
   $("latex").placeholder = t(it ? "latex_ph_sel" : "latex_ph_none");
   $("curName").textContent = it ? it.name : "";
   const bs = $("curBadge"); bs.replaceChildren(...(it ? [makeBadge(it)] : []));
@@ -637,6 +737,7 @@ function persistNow(it) {
 }
 function flushPersist() { for (const id of [...persistTimers.keys()]) { const it = S.items.find(i => i.id === id); if (it) persistNow(it); } }
 $("latex").addEventListener("input", () => {
+  hlRender();
   const it = cur(); if (!it) return;
   it.latex = $("latex").value;
   it.edited = it.latex !== it.base;

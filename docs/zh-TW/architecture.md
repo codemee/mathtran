@@ -140,6 +140,7 @@ flowchart LR
 | 中文字型要用「名稱」 | tectonic 以檔案路徑指定字型（如 `C:/Windows/Fonts/msjh.ttc`）會失敗；改用系統字型名稱（`Microsoft JhengHei`）可行。可用 `MATHTRAN_CJK_FONT` 覆寫 |
 | 裸中文要包 `\text{}` | 數學模式不會畫出中文；`wrap_cjk_in_text` 會把不在 `\text{}` 內的 CJK 連續字元包起來（KaTeX 預覽端有對應的 JS 版本） |
 | 只在需要時載入 xeCJK | 內容不含 CJK 就不載入，避免無謂的字型相依與編譯時間 |
+| LaTeX 編輯區的語法標色 | 不引入編輯器套件：透明的 `<textarea>` 疊在同尺寸的 `<pre id="hl">` 上，`hlTokens()` 把內容切成指令 / 括號 / 數字 / 文字 / 註解並上色，`hlRender()` 重畫。兩層的字型、邊框、內距、換行、`scrollbar-gutter` 必須完全一致，字才會對齊（`tests/test_highlight.py` 以 node 測標記器與配色對比）；`textarea::selection` 要半透明，否則選取底色會蓋住下層的字；游標旁的括號配對在 `keyup` / `mouseup` / `focus` 時更新 |
 | 桌面版匯出走另存新檔對話框 | pywebview 預設擋下載（`ALLOW_DOWNLOADS`），所以前端偵測 `window.pywebview.api.save_file`，改以 `js_api` 儲存 |
 | **`js_api` 物件不要放公開屬性參照 window** | pywebview 會遞迴走訪 `js_api` 的**所有不以底線開頭的屬性**；若把 `Window` 物件放在公開屬性，會走進 WinForms 原生控制項，造成約每 6 次啟動 1 次的間歇性整個程式卡死。因此一律用 `_window` |
 | 視窗圖示 | pywebview 在 Windows 沒有圖示參數，改以 `LoadImageW` + `WM_SETICON` 設定 |

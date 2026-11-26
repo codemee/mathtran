@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+### 繁體中文
+
+- LaTeX 編輯區新增**語法標色**：指令、大括號、上下標、數字、`\text{}` 內的文字與註解各有顏色（淺色 / 深色配色都有對應）；游標在括號旁時成對的括號會反白，沒有配對的括號會畫紅色波浪底線
+
+### English
+
+- The LaTeX editor now has **syntax highlighting**: commands, braces, super/subscripts, numbers, text inside `\text{}` and comments each get a color (for both light and dark themes); the matching brace is highlighted next to the caret and unmatched braces get a red wavy underline
+
 ## [0.1.2] - 2026-11-26
 
 ### 繁體中文
