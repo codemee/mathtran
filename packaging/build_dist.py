@@ -96,6 +96,10 @@ def make_dmg_macos(ver: str) -> Path:
 
 
 def main() -> None:
+    # CI 的 Windows 主控台預設是 cp1252，印中文會 UnicodeEncodeError：統一改成 UTF-8
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     ver = version()
     DIST.mkdir(exist_ok=True)
     build_pyinstaller()

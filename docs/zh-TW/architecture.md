@@ -153,6 +153,8 @@ flowchart LR
 | 判斷「公式有沒有太寬」不能量 `.katex` | 顯示模式下 `.katex` 寬度永遠等於容器寬度（內容是溢出去的），量不到真實寬度；也不能把 `scrollWidth` 當內容寬度（沒溢出時它等於 `clientWidth`，會誤判成溢出）。`fitPreview()` 只在 `scrollWidth > clientWidth` 時縮小，並重複檢查直到不再溢出（有下限 `PV_MIN_SCALE`） |
 | 即時 / 精準預覽的狀態 | `S.pv` 為 `live` 或 `acc`；精準結果存在 `item.acc = {latex, url}`，只有 `latex` 仍相同才有效，所以切換不重新編譯，修改內容後自動回到即時 |
 | 測試與快取隔離 | `tests/conftest.py` 自動把 `config.CONFIG_PATH` 指到暫存資料夾，避免測試污染你真正的快取；`cache_path()` 每次呼叫才計算路徑 |
+| PyMuPDF 要限定 1.x（`pymupdf>=1.28,<2`） | 2.x 把 `pymupdf-layout`、`pymupdf4llm`、`onnxruntime`、`numpy` 等一整串東西列為必要相依。後果：安裝包大幅變大（ZIP 117 MB → 65 MB）、`onnxruntime` 沒有 macOS Intel 的安裝檔（雲端的 Intel 打包因此失敗）、`pymupdf-layout` / `pymupdf4llm` 在 PyPI 上沒有宣告授權。我們只用最基本的功能（開 PDF、轉 SVG、畫圖示），1.x 完全夠用 |
+| `print` 中文在 CI 的 Windows 會當掉 | CI 的 Windows 主控台預設編碼是 cp1252，印中文會 `UnicodeEncodeError`（打包其實成功了，卻在最後一行失敗）。建置腳本一開始就把 stdout / stderr 改成 UTF-8 |
 | `tr()` 的第一個參數要 positional-only | 訊息的佔位符可能叫 `key` / `name`，若 `tr(key, **kw)` 的參數也叫 `key` 就會撞名（`got multiple values for argument`）。改成 `tr(message_id, /, **kw)` |
 | 純 ASGI middleware | 用 `BaseHTTPMiddleware` 時 contextvar 在 FastAPI 於執行緒池跑的同步端點裡不一定可靠；寫成純 ASGI（`__call__(scope, receive, send)`）才穩，並有「24 個中英文請求同時送出，訊息不互相混到」的測試 |
 | 螢幕擷取工具要防「拍到別的視窗」 | `packaging/screenshots.py` 抓的是螢幕畫面：視窗被蓋住就會拍到其他內容（可能含隱私）。因此擷取前會設為最上層並確認為前景視窗，做不到就報錯、不寫檔 |

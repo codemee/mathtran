@@ -29,7 +29,10 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.14.0",
     "fastapi>=0.165.0",
-    "pymupdf>=2.2",
+    # 限定 1.x：2.x 把 pymupdf-layout / pymupdf4llm / onnxruntime / numpy 等一整串東西列為必要相依
+    # （其中 pymupdf-layout、pymupdf4llm 沒有宣告授權；onnxruntime 也沒有 macOS Intel 的安裝檔）。
+    # 我們只用最基本的功能（開 PDF、轉 SVG、畫圖示），1.x 完全夠用。
+    "pymupdf>=1.28,<2",
     "python-multipart>=0.0.34",
     "pywebview>=6.2.1",
     "typer>=0.29.2",
