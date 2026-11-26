@@ -3,7 +3,7 @@ name = "mathtran"
 version = "0.1.0"
 description = "Image math formula to LaTeX, with SVG/PDF export (CLI, web, desktop)"
 readme = "README.md"
-license = "MIT"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [
     { name = "meebox", email = "meebox@gmail.com" }

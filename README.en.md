@@ -118,4 +118,12 @@ echo '\begin{pmatrix}a&b\\c&d\end{pmatrix}' | mathtran render - -o matrix.svg
 
 ## License
 
-[MIT License](https://github.com/codemee/mathtran/blob/main/LICENSE). See [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md) for third-party components; note that **PyMuPDF is AGPL-3.0**, which matters if you distribute a packaged build that includes it.
+Licensed under [GPL-3.0-or-later](https://github.com/codemee/mathtran/blob/main/LICENSE) (GNU General Public License, version 3 or any later version).
+
+| What you want to do | What to keep in mind |
+|---|---|
+| Use or modify it yourself | No restrictions |
+| Distribute it (including modified versions or a packaged app) | Must be licensed under GPL-3.0 or later, with source code included or offered |
+| Offer it as a network service | Because it depends on PyMuPDF (AGPL-3.0), the combined work must follow AGPL section 13: users who interact with it over a network must be able to get the corresponding source |
+
+See [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md) for third-party components and license compatibility.

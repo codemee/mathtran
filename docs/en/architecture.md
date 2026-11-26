@@ -92,4 +92,4 @@ Two kinds of tests: OCR uses a mock client (no API cost); rendering and export u
 
 - Packaging as a standalone desktop app with PyInstaller
 - Verification on macOS / Linux
-- PyMuPDF is AGPL-3.0: to distribute a packaged build you must either adopt AGPL or replace the PDF → SVG step (see [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md))
+- A packaged build must ship the license texts and a way to get the source (the project is GPL-3.0-or-later and depends on the AGPL-3.0 PyMuPDF; see [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md))

@@ -116,4 +116,12 @@ echo '\begin{pmatrix}a&b\\c&d\end{pmatrix}' | mathtran render - -o matrix.svg
 
 ## 授權
 
-[MIT License](https://github.com/codemee/mathtran/blob/main/LICENSE)。第三方元件請見 [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md)，其中 **PyMuPDF 為 AGPL-3.0**，散布含它的打包版本時請留意。
+採用 [GPL-3.0-or-later](https://github.com/codemee/mathtran/blob/main/LICENSE)（GNU 通用公共授權第 3 版或更新版本）。
+
+| 你想做的事 | 需要注意 |
+|---|---|
+| 自己使用、修改 | 沒有限制 |
+| 散布（含修改後版本、打包成 App） | 必須同樣以 GPL-3.0 以上授權，並附上或提供原始碼 |
+| 對外提供網路服務 | 因為相依 PyMuPDF（AGPL-3.0），合併後的作品要遵守 AGPL 第 13 條：使用者透過網路互動時，必須能取得對應的原始碼 |
+
+第三方元件與授權相容性請見 [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md)。

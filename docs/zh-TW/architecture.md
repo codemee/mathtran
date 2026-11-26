@@ -92,4 +92,4 @@ uv run python packaging/screenshots.py   # 重新產生 README 截圖（需 Wind
 
 - PyInstaller 打包成免安裝的桌面 App
 - macOS / Linux 的實機驗證
-- PyMuPDF 為 AGPL-3.0：若要散布打包版本，需決定改採 AGPL，或替換 PDF → SVG 的實作（見 [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md)）
+- 打包時要隨附授權文件與原始碼取得方式（專案為 GPL-3.0-or-later，且相依 AGPL-3.0 的 PyMuPDF，見 [THIRD_PARTY_NOTICES.md](https://github.com/codemee/mathtran/blob/main/THIRD_PARTY_NOTICES.md)）
