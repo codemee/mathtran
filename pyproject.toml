@@ -1,6 +1,6 @@
 [project]
 name = "mathtran"
-version = "0.1.5"
+version = "0.1.6"
 description = "Image math formula to LaTeX, with live preview and SVG / PDF / .tex export (CLI, web and desktop app)"
 readme = "README.md"
 license = "GPL-3.0-or-later"

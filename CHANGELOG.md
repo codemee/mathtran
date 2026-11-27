@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-27
+
+配色調整：淺色多了黃色點綴，深色的初始畫面也有 EVA 的主要配色。 / Theme polish: the light theme gets yellow accents, and the dark theme's first screen shows Evangelion's main colors.
+
+### 繁體中文
+
+- 淺色配色（鋼彈 RX-78-2）**增加黃色點綴**：只用在步驟編號的圓圈（黃底藍字）；全部是純色平面，沒有立體效果
+- 深色配色（福音戰士）的初始畫面**多了初號機的配色**：步驟編號的圓圈改成螢光綠底深色字、鑰匙上「尚未設定」的提醒點改成橘色，不再只有紫色
+- 還沒有圖片時，原圖區改用背景色，不再是一塊突兀的白色（深色配色下特別明顯）
+- 縮圖大小滑桿的進度與手把改用主題的主色（淺色＝鋼彈藍、深色＝EVA 紫），不再是瀏覽器預設的藍色
+
+### English
+
+- The light theme (Gundam RX-78-2) gets **yellow accents**: used only for the step-number circles (blue on yellow); everything stays flat, with no 3D effects
+- The dark theme (Evangelion) shows **more of Unit-01's colors on the first screen**: the step-number circles are now neon green with dark digits and the "not set yet" dot on the key is orange, instead of purple only
+- With no image yet, the original-image area uses the background color instead of a stark white block (most noticeable in the dark theme)
+- The thumbnail-size slider's progress and handle now use the theme's main color (Gundam blue in the light theme, EVA purple in the dark one) instead of the browser's default blue
+
 ## [0.1.5] - 2026-11-27
 
 圖形編輯器的一輪修正，並可以選擇辨識用的模型。 / A round of visual-editor fixes, and you can now choose the recognition model.
@@ -111,6 +129,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.6]: https://github.com/codemee/mathtran/releases/tag/v0.1.6
 [0.1.5]: https://github.com/codemee/mathtran/releases/tag/v0.1.5
 [0.1.4]: https://github.com/codemee/mathtran/releases/tag/v0.1.4
 [0.1.3]: https://github.com/codemee/mathtran/releases/tag/v0.1.3

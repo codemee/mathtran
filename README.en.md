@@ -106,8 +106,8 @@ Hovering a button shows its current state, and the status bar confirms the chang
 
 | Theme | Inspired by | Colors |
 |---|---|---|
-| Light | Gundam RX-78-2 | White body as the base, Gundam blue as the main color, with red and yellow accents |
-| Dark | Neon Genesis Evangelion | Deep purple-black base, Unit-01 purple as the main color, with neon-green and orange accents |
+| Light | Gundam RX-78-2 | White body as the base, Gundam blue as the main color, with red and yellow accents (yellow is used only for the step-number circles: blue on yellow) |
+| Dark | Neon Genesis Evangelion | Deep purple-black base, Unit-01 purple as the main color, with neon-green and orange accents (the step-number circles are neon green with dark digits; the "not set yet" dot on the key is orange) |
 
 Everything is drawn in flat, solid colors — there are no gradients. The text contrast of both schemes is checked (normal text is never below 4.5:1).
 

@@ -18,6 +18,8 @@
           --bg:#eef1f6; --card:#ffffff; --fg:#16233a; --muted:#5d6b82; --line:#d5dce8;
           --accent:#1d4fa8; --accent-solid:#1d4fa8; --on-accent:#ffffff;
           --err:#c8202b; --err-solid:#d7262c; --ok:#216a3f; --cache:#0b6479; --edit:#8a5600; --sel:#e3ebf8;
+          /* 步驟編號圓圈：RX-78-2 的黃（黃底藍字）；深色是 EVA 初號機的螢光綠。--dot：鑰匙上「尚未設定」的提醒點 */
+          --step-bg:#ffd54a; --step-fg:#1d4fa8; --dot:var(--err-solid);
           /* LaTeX 語法標色（對 --bg 的對比都 ≥ 4.5:1） */
           --tk-cmd:#1558d6; --tk-text:#0b6b3a; --tk-op:#b3261e; --tk-num:#8a4b00; --tk-brace:#7b3fa6; --tk-cmt:#5d6b82; }
   @media (prefers-color-scheme: dark) {
@@ -25,6 +27,7 @@
           --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
           --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
           --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42;
+          --step-bg:#5bff7e; --step-fg:#0c0916; --dot:#ffa63d;
           --tk-cmd:#6fa8ff; --tk-text:#6ee7a0; --tk-op:#ff8a80; --tk-num:#ffc27a; --tk-brace:#e0a8ff; --tk-cmt:#9b90b8; }
   }
   :root[data-theme="light"] { color-scheme: light; }
@@ -32,6 +35,7 @@
           --bg:#0c0916; --card:#161026; --fg:#ebe6f7; --muted:#9b90b8; --line:#2c2245;
           --accent:#b794ff; --accent-solid:#7a47e0; --on-accent:#ffffff;
           --err:#ff6b78; --err-solid:#d92d3d; --ok:#5bff7e; --cache:#4fe0c0; --edit:#ffa63d; --sel:#251a42;
+          --step-bg:#5bff7e; --step-fg:#0c0916; --dot:#ffa63d;
           --tk-cmd:#6fa8ff; --tk-text:#6ee7a0; --tk-op:#ff8a80; --tk-num:#ffc27a; --tk-brace:#e0a8ff; --tk-cmt:#9b90b8; }
 
   * { box-sizing:border-box }
@@ -43,7 +47,7 @@
   .tb:hover { background:color-mix(in srgb, var(--accent) 14%, transparent) }
   .tb svg { width:18px; height:18px; display:block }
   .tb .tbtxt { font-size:14px; font-weight:800; letter-spacing:-.3px }
-  .tb .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--err-solid); border:1.5px solid var(--bg) }
+  .tb .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--dot); border:1.5px solid var(--bg) }
   main { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding:6px 20px 16px }
   @media (max-width:800px) { main { grid-template-columns:1fr } }
   /* 寬螢幕：整個視窗不捲動，左右兩個窗格各自捲動（右邊內容多時用自己的捲軸）；窄螢幕上下堆疊時才讓整頁捲動 */
@@ -58,8 +62,8 @@
   section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; min-width:0 }
   h2 { font-size:15px; margin:0; color:var(--fg); font-weight:700; display:flex; gap:10px; align-items:center; flex-wrap:wrap }
   /* 步驟編號：漸層圓形徽章 */
-  .step { flex:none; width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; color:#fff;
-          font-size:14px; font-weight:800; line-height:1; background:var(--accent-solid) }
+  .step { flex:none; width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; color:var(--step-fg);
+          font-size:14px; font-weight:800; line-height:1; background:var(--step-bg) }
   h2 .hint { font-weight:400 }
   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
   .row.between { justify-content:space-between }
@@ -75,7 +79,7 @@
   button:disabled { opacity:.45; cursor:not-allowed }
   button[hidden] { display:none }
   label.chk { display:inline-flex; gap:5px; align-items:center; font-size:13px; cursor:pointer }
-  input[type=checkbox] { accent-color:var(--accent-solid) }
+  input[type=checkbox], input[type=range] { accent-color:var(--accent-solid) }   /* 勾選框、滑桿用主題的實心色（淺色＝鋼彈藍、深色＝EVA 紫） */
   /* 圖片清單 */
   #list { border:2px dashed var(--line); border-radius:8px; min-height:240px; max-height:calc(100vh - 372px); overflow:auto; outline:none; padding:6px }
   .zoom { display:inline-flex; gap:6px; align-items:center; margin-left:auto; font-size:12px; color:var(--muted) }
@@ -111,7 +115,8 @@
   /* 右側 */
   #orig { min-height:60px; max-height:150px; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden }
   #orig img { max-width:100%; max-height:148px; object-fit:contain }
-  #orig:empty::before { content:attr(data-empty); color:#8c94a8; font-size:13px }
+  #orig:empty { background:var(--bg) }   /* 還沒有圖片時不要一塊白色（深色配色下很突兀）；有圖片時才是白底 */
+  #orig:empty::before { content:attr(data-empty); color:var(--muted); font-size:13px }
   textarea { width:100%; min-height:100px; font:14px/1.4 ui-monospace,Consolas,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; resize:vertical }
   /* LaTeX 編輯區：透明的 textarea 疊在標色層（#hl）上；兩者的字型、邊框、內距、換行、捲軸槽完全一致，字才會對齊 */
   /* 編輯區的外框（#edBox）：右上角的「LaTeX 文字 / 圖形編輯」切換鈕在框內，和預覽區的按鈕一樣；裡面的編輯器自己不畫框線 */
