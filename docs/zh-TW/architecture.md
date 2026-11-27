@@ -29,11 +29,11 @@ flowchart LR
 |---|---|
 | `core/ocr.py` | `recognize()`：先查快取、沒有才呼叫 Claude 視覺 API；`clean_latex` 去除程式碼圍欄與 `$$`、`\[ \]` |
 | `core/cache.py` | 辨識快取：以圖片 SHA-256 為鍵存於 `~/.mathtran/cache.json`（執行緒鎖 + 原子寫入，檔案損毀時視為空） |
-| `core/batch.py` | 批次匯出成 zip：檔名清理與去重（不分大小寫）、個別失敗不中斷、錯誤寫入 `errors.txt` |
+| `core/batch.py` | 批次匯出：檔名清理與去重（不分大小寫）、`render_formats()`（每個公式最多編譯一次，svg 與 pdf 共用）、`export_zip()`（網頁 / 桌面版，個別失敗不中斷、錯誤寫入 `errors.txt`）、`collect_images()`（命令列：展開資料夾、去重） |
 | `core/render.py` | 把公式包成 `standalone` 文件 → tectonic 編譯成 PDF → PyMuPDF 轉 SVG |
 | `core/config.py` | API key（環境變數優先，其次 `~/.mathtran/config.json`）、模型名稱，以及介面偏好（語言、配色、縮圖、匯出格式）的驗證與保存 |
 | `core/i18n.py` | 後端訊息的多語系：`tr()`、語言解析、contextvar |
-| `cli.py` | 子指令 `ocr` / `render` / `convert` / `config` / `serve` / `gui` |
+| `cli.py` | `--version` 與子指令 `ocr` / `render` / `convert` / `cache` / `config` / `serve` / `gui`；多張圖片用 `ThreadPoolExecutor` 並行辨識（預設 3 張），編譯依序進行；沒有 API key 時第一個失敗就中止；輸出到資料夾與輸出成檔案由 `-o` 是否為 `.svg` / `.pdf` / `.tex` 判斷 |
 | `server.py` | FastAPI：API 與靜態前端 |
 | `desktop.py` | pywebview 視窗、另存新檔 / 選資料夾匯出 API、視窗圖示 |
 | `web/index.html` | 單檔前端（圖片清單、批次辨識與匯出）；`web/vendor/` 內建 KaTeX（即時預覽）與 MathLive（圖形編輯器），都可離線使用 |

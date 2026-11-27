@@ -29,11 +29,11 @@ The desktop app is just "a pywebview window + a local FastAPI server", sharing t
 |---|---|
 | `core/ocr.py` | `recognize()`: checks the cache first, calls the Claude vision API only on a miss; `clean_latex` strips code fences and `$$` / `\[ \]` |
 | `core/cache.py` | Recognition cache keyed by the image's SHA-256, stored in `~/.mathtran/cache.json` (thread lock + atomic writes; a corrupt file is treated as empty) |
-| `core/batch.py` | Batch export to a zip: file-name sanitizing and de-duplication (case-insensitive), per-item failures don't stop the batch, errors go to `errors.txt` |
+| `core/batch.py` | Batch export: file-name sanitizing and de-duplication (case-insensitive), `render_formats()` (each formula is compiled at most once; svg and pdf share it), `export_zip()` (web / desktop; per-item failures don't stop the batch, errors go to `errors.txt`), `collect_images()` (command line: expands folders, de-duplicates) |
 | `core/render.py` | Wraps the formula in a `standalone` document → tectonic compiles to PDF → PyMuPDF converts to SVG |
 | `core/config.py` | API key (env var first, then `~/.mathtran/config.json`), model name, and validation / saving of the UI preferences (language, theme, thumbnail size, export formats) |
 | `core/i18n.py` | Multi-language messages for the back end: `tr()`, language resolution, the contextvar |
-| `cli.py` | Subcommands `ocr` / `render` / `convert` / `config` / `serve` / `gui` |
+| `cli.py` | `--version` and the subcommands `ocr` / `render` / `convert` / `cache` / `config` / `serve` / `gui`; several images are recognized in parallel with a `ThreadPoolExecutor` (3 by default) while compiling runs one after another; a missing API key aborts at the first failure; whether `-o` is a folder or a file is decided by whether it ends in `.svg` / `.pdf` / `.tex` |
 | `server.py` | FastAPI: API plus static front end |
 | `desktop.py` | pywebview window, "Save as" / "choose folder" export APIs, window icon |
 | `web/index.html` | Single-file front end (image list, batch recognition and export); `web/vendor/` bundles KaTeX (live preview) and MathLive (visual editor), both usable offline |

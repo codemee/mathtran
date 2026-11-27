@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-11-28
+
+命令列的一輪補強：版本、`.tex` 輸出、批次處理。 / Command-line upgrades: version, `.tex` output and batch jobs.
+
+### 繁體中文
+
+- 命令列新增 **`mathtran --version`**（`-V`）
+- `render`、`convert` 可以輸出 **`.tex`**（完整、可自行編譯的文件），`-o` 可重複，一次輸出多種格式
+- **批次處理**：`ocr` 與 `convert` 可以一次給多張圖片或整個資料夾（`-r` 含子資料夾）；`convert` 輸出到資料夾並用 `-f` 選格式（`svg` / `pdf` / `tex`，可重複）；`-j` 設定同時辨識的張數（預設 3）；`ocr --json` 輸出 JSON；個別失敗不會中斷整批，沒有 API key 時立刻停止
+
+### English
+
+- The command line gets **`mathtran --version`** (`-V`)
+- `render` and `convert` can write **`.tex`** (a complete, self-compilable document), and `-o` can be repeated to write several formats at once
+- **Batch jobs**: `ocr` and `convert` accept several images or a whole folder (`-r` includes subfolders); `convert` writes to a folder and `-f` picks the formats (`svg` / `pdf` / `tex`, repeatable); `-j` sets how many are recognized at once (default 3); `ocr --json` prints JSON; one failure does not stop the batch, and a missing API key stops it at once
+
 ## [0.1.6] - 2026-11-27
 
 配色調整：淺色多了黃色點綴，深色的初始畫面也有 EVA 的主要配色。 / Theme polish: the light theme gets yellow accents, and the dark theme's first screen shows Evangelion's main colors.
@@ -129,6 +145,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.7]: https://github.com/codemee/mathtran/releases/tag/v0.1.7
 [0.1.6]: https://github.com/codemee/mathtran/releases/tag/v0.1.6
 [0.1.5]: https://github.com/codemee/mathtran/releases/tag/v0.1.5
 [0.1.4]: https://github.com/codemee/mathtran/releases/tag/v0.1.4

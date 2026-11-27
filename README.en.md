@@ -24,7 +24,7 @@ Three ways to use it, all sharing one core:
 |---|---|---|
 | Desktop window | `mathtran gui` | Everyday use; exports open a "Save as" dialog |
 | Browser | `mathtran serve` | Working in a browser tab |
-| Command line | `mathtran ocr / render / convert` | Batch jobs, scripting |
+| Command line | `mathtran ocr / render / convert` | Batch jobs on folders, scripting |
 
 ## Installation
 
@@ -281,9 +281,11 @@ The **status bar** at the bottom of the window shows what is happening:
 
 | Command | What it does |
 |---|---|
-| `mathtran ocr image.png [--no-cache]` | Recognize an image and print the LaTeX (cached results are reused; `--no-cache` forces a redo) |
-| `mathtran render "E=mc^2" -o out.svg` | LaTeX → SVG or PDF (extension picks the format) |
-| `mathtran convert image.png -o out.pdf [--no-cache]` | Recognize and export in one step |
+| `mathtran --version` | Show the version (for example `MathTran 0.1.7`) |
+| `mathtran ocr IMAGE_OR_FOLDER… [--no-cache] [-j 3] [-r] [--json]` | Recognize images and print the LaTeX (cached results are reused). One image prints only the LaTeX; several images or a folder put a `% filename` line before each; `--json` prints JSON for scripts |
+| `mathtran render "E=mc^2" -o out.svg [-o out.tex …]` | LaTeX → SVG, PDF or `.tex` (the extension picks the format; repeat `-o` to write several at once) |
+| `mathtran convert image.png -o out.pdf` | Recognize and export in one step; `-o` can be repeated (`-o a.svg -o a.tex`) |
+| `mathtran convert IMAGE_OR_FOLDER… -o FOLDER/ [-f svg -f pdf -f tex]` | **Batch**: several images or a folder, written to the given folder (file name = image name; clashes get `_2`); `-f` picks the formats (default `svg`) |
 | `mathtran cache [--clear]` | Show the number of cached results and where they live; `--clear` empties it |
 | `mathtran config --api-key KEY` | Save the API key (stored under `~/.mathtran/`) |
 | `mathtran config --model ID` | Set the recognition model (default `claude-sonnet-5-5`; empty = default); the `MATHTRAN_MODEL` environment variable also works and takes priority |
@@ -296,9 +298,25 @@ Examples:
 # image -> PDF
 mathtran convert formula.png -o formula.pdf
 
+# one image to SVG and a self-compilable .tex at once
+mathtran convert formula.png -o formula.svg -o formula.tex
+
+# a whole folder (with subfolders) -> out/, SVG and PDF for each, 4 recognized at a time
+mathtran convert notes/ -r -o out/ -f svg -f pdf -j 4
+
+# recognize a whole folder and save the result as JSON
+mathtran ocr notes/ --json > result.json
+
 # read LaTeX from stdin
 echo '\begin{pmatrix}a&b\\c&d\end{pmatrix}' | mathtran render - -o matrix.svg
 ```
+
+Rules for batch jobs:
+
+- A **folder** only contributes PNG / JPEG / WebP / GIF files; subfolders are skipped unless you add `-r`
+- **A failure does not stop the batch**: if one image fails to recognize or compile, the rest are still written, and the numbers of successes and failures are reported at the end; the exit code is 1 if anything failed
+- **With no API key** it stops right away instead of trying every image (images already in the cache need no API key)
+- When writing to a folder, `-o` must be a folder; only a single image can be written to an `.svg` / `.pdf` / `.tex` file
 
 ### Formula tips
 

@@ -24,7 +24,7 @@
 |---|---|---|
 | 桌面視窗 | `mathtran gui` | 一般使用，匯出時有「另存新檔」對話框 |
 | 瀏覽器 | `mathtran serve` | 想在瀏覽器操作 |
-| 命令列 | `mathtran ocr / render / convert` | 批次處理、整合進腳本 |
+| 命令列 | `mathtran ocr / render / convert` | 批次處理資料夾、整合進腳本 |
 
 ## 安裝
 
@@ -277,9 +277,11 @@
 
 | 指令 | 功能 |
 |---|---|
-| `mathtran ocr 圖片.png [--no-cache]` | 辨識圖片，把 LaTeX 印到螢幕（辨識過的用快取；`--no-cache` 強制重辨） |
-| `mathtran render "E=mc^2" -o out.svg` | LaTeX → SVG 或 PDF（副檔名決定格式） |
-| `mathtran convert 圖片.png -o out.pdf [--no-cache]` | 辨識並匯出，一步完成 |
+| `mathtran --version` | 顯示版本（例如 `MathTran 0.1.7`） |
+| `mathtran ocr 圖片或資料夾… [--no-cache] [-j 3] [-r] [--json]` | 辨識圖片，把 LaTeX 印到螢幕（辨識過的用快取）。只有一張時只印 LaTeX；多張或資料夾時每張前面加一行 `% 檔名`；`--json` 輸出 JSON，方便腳本處理 |
+| `mathtran render "E=mc^2" -o out.svg [-o out.tex …]` | LaTeX → SVG、PDF 或 `.tex`（副檔名決定格式，`-o` 可重複一次輸出多種） |
+| `mathtran convert 圖片.png -o out.pdf` | 辨識並匯出，一步完成；`-o` 可重複（`-o a.svg -o a.tex`） |
+| `mathtran convert 圖片或資料夾… -o 資料夾/ [-f svg -f pdf -f tex]` | **批次處理**：多張圖片或資料夾，輸出到指定資料夾（檔名 = 圖檔名，同名自動加 `_2`）；`-f` 選格式（預設 `svg`） |
 | `mathtran cache [--clear]` | 查看快取筆數與位置；`--clear` 清除 |
 | `mathtran config --api-key KEY` | 儲存 API key（存於使用者目錄 `~/.mathtran/`） |
 | `mathtran config --model ID` | 設定辨識用的模型（預設 `claude-sonnet-5-5`；空字串 = 預設）；也可用環境變數 `MATHTRAN_MODEL`（優先） |
@@ -292,9 +294,25 @@
 # 圖片 → PDF
 mathtran convert formula.png -o formula.pdf
 
+# 同一張圖一次輸出 SVG 和可自行編譯的 .tex
+mathtran convert formula.png -o formula.svg -o formula.tex
+
+# 整個資料夾（連子資料夾）→ out/，每張輸出 SVG 與 PDF，4 張同時辨識
+mathtran convert notes/ -r -o out/ -f svg -f pdf -j 4
+
+# 辨識整個資料夾，結果存成 JSON
+mathtran ocr notes/ --json > result.json
+
 # 從標準輸入讀 LaTeX
 echo '\begin{pmatrix}a&b\\c&d\end{pmatrix}' | mathtran render - -o matrix.svg
 ```
+
+批次處理的規則：
+
+- **資料夾**只收 PNG / JPEG / WebP / GIF；預設不進子資料夾，要的話加 `-r`
+- **失敗不會中斷整批**：個別圖片辨識或編譯失敗，其餘照常輸出，最後列出成功與失敗的張數；有任何失敗時結束碼是 1
+- **沒有設定 API key** 時會立刻停止，不會把每張圖都試一遍（快取裡已有結果的圖片不需要 API key）
+- 輸出到資料夾時，`-o` 一定要是資料夾；只有單張圖片才能 `-o` 到 `.svg` / `.pdf` / `.tex` 檔
 
 ### 公式小技巧
 
