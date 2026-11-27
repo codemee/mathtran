@@ -68,3 +68,35 @@ def test_tokenizer(tmp_path):
     assert [k[2] for k in bad if k[0] == "b"] == [True, True]            # 沒有配對的括號
     assert ["c", r"\{", False] in esc and not any(k[0] == "b" for k in esc)  # 跳脫的括號不算括號
     assert [k for k in unclosed if k[0] == "b"] == [["b", "{", True]]
+
+
+def test_visual_editor_forces_user_select_text():
+    """pywebview 預設整頁 user-select:none；MathLive 看到 none 就不處理滑鼠點擊，所以圖形編輯區必須明確設成 text。"""
+    rule = re.search(r"#gfxBox, #gfxBox math-field \{([^}]*)\}", HTML)
+    assert rule, "找不到 #gfxBox 的 user-select 規則"
+    assert "user-select:text !important" in rule.group(1).replace(" ", "").replace("user-select:text!important", "user-select:text !important")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="需要 node 才能執行前端的函式")
+def test_gfx_normalize(tmp_path):
+    """圖形編輯器寫回的 LaTeX：拿掉 \\placeholder{}、在每個 \\\\ 後面補回換行。"""
+    start = HTML.index("function gfxNormalize")
+    end = HTML.index("\n}\n", start) + 3
+    script = tmp_path / "n.js"
+    script.write_text(
+        HTML[start:end]
+        + "\nconsole.log(JSON.stringify(JSON.parse(process.argv[2]).map(gfxNormalize)));",
+        encoding="utf-8",
+    )
+    cases = [
+        r"\begin{aligned}a & =b\\[1.5 em] \placeholder{} & \placeholder{}\\ c & =d\end{aligned}",
+        r"x\placeholder[k]{y}z",
+        r"\displaylines{a\\ b\\ }",
+        "a+b",
+    ]
+    out = subprocess.run(["node", str(script), json.dumps(cases)], capture_output=True, text=True, check=True, encoding="utf-8")
+    aligned, ph, lines, plain = json.loads(out.stdout)
+    assert aligned == "\\begin{aligned}\na & =b\\\\[1.5 em]\n& \\\\\nc & =d\n\\end{aligned}"   # 沒有 \placeholder，每個 \\ 後換行，保留行距參數
+    assert "placeholder" not in ph and ph == "xyz"                                          # 有內容的留下內容
+    assert lines == "\\displaylines{a\\\\\nb\\\\\n}"                                          # 結尾的 \\ 後面沒有多餘空白行
+    assert plain == "a+b"                                                                   # 沒有 \\ 的公式不變

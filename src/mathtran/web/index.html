@@ -46,6 +46,15 @@
   .tb .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--err-solid); border:1.5px solid var(--bg) }
   main { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding:6px 20px 16px }
   @media (max-width:800px) { main { grid-template-columns:1fr } }
+  /* 寬螢幕：整個視窗不捲動，左右兩個窗格各自捲動（右邊內容多時用自己的捲軸）；窄螢幕上下堆疊時才讓整頁捲動 */
+  @media (min-width:801px) {
+    html, body { height:100% }
+    body { display:flex; flex-direction:column; overflow:hidden }
+    #toolbar { flex:none }
+    main { flex:1; min-height:0; grid-template-rows:minmax(0,1fr); padding-bottom:12px }
+    section { min-height:0; overflow-y:auto }
+    section > * { flex-shrink:0 }
+  }
   section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; min-width:0 }
   h2 { font-size:15px; margin:0; color:var(--fg); font-weight:700; display:flex; gap:10px; align-items:center; flex-wrap:wrap }
   /* 步驟編號：漸層圓形徽章 */
@@ -117,6 +126,8 @@
   #gfxBox math-field { display:block; width:100%; box-sizing:border-box; min-height:100px; padding:8px 10px; font-size:24px; background:transparent; color:var(--fg);
             border:0; border-radius:0 0 8px 8px; outline:none; --caret-color:var(--fg); --selection-background-color:color-mix(in srgb, var(--accent) 30%, transparent);
             --selection-color:var(--fg); --primary:var(--accent-solid); --text-font-family:system-ui,"Microsoft JhengHei",sans-serif }
+  /* pywebview 預設把整頁設成 user-select:none；MathLive 看到 none 就不處理滑鼠點擊（無法用滑鼠移動游標、選取），所以這裡要明確改回 text */
+  #gfxBox, #gfxBox math-field { -webkit-user-select:text !important; user-select:text !important }
   #gfxBox[hidden], .ed[hidden] { display:none }
   .ed-tools { display:flex; justify-content:flex-end; gap:2px; padding:5px 8px 0 }
   #hl { position:absolute; inset:0 }   /* 大小跟著 textarea（使用者拖曳調整高度時一起變） */
@@ -152,7 +163,8 @@
   #health { white-space:nowrap; flex:none } #health .bad { color:var(--err) }
   dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg) }
   dialog::backdrop { background:rgba(10,12,24,.45) }
-  dialog input { width:340px; padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px }
+  dialog input, dialog select { display:block; width:340px; padding:8px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px; font:inherit }
+  dialog input[hidden] { display:none }
 </style>
 </head>
 <body>
@@ -245,6 +257,10 @@
   <form method="dialog">
     <p data-i18n="kd_text"></p>
     <input id="keyIn" type="password" placeholder="sk-ant-...">
+    <label class="lbl" for="modelIn" data-i18n="kd_model" style="display:block;margin-top:12px">辨識用的模型</label>
+    <select id="modelSel"></select>
+    <input id="modelIn" spellcheck="false" autocomplete="off" placeholder="claude-sonnet-5-5" hidden style="margin-top:6px">
+    <p class="hint" id="modelHint" style="margin:6px 0 0;max-width:340px"></p>
     <div class="row" style="margin-top:10px"><button id="keySave" value="ok" data-i18n="kd_save">儲存</button><button class="secondary" value="cancel" data-i18n="kd_cancel">取消</button></div>
   </form>
 </dialog>
@@ -281,7 +297,7 @@ const I18N = {
     row_chk_title: "勾選（批次辨識 / 匯出用）",
     bd_run: "辨識中…", bd_queued: "等待中", bd_err: "失敗", bd_edit: "已修改", bd_cache: "已快取", bd_ok: "已辨識", bd_idle: "未辨識",
     ready: "就緒",
-    h_key_ok: "API key ✓", h_key_bad: "⚠ 未設定 API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ 找不到 tectonic",
+    h_key_ok: "API key ✓", h_key_bad: "⚠ 未設定 API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ 找不到 tectonic", h_model: "模型：{model}", h_model_tip: "目前辨識用的模型（按右上角的鑰匙圖示可更換）",
     scope_sel: "目前檢視的圖片", scope_chk: "勾選的圖片", scope_all: "目前所有圖片",
     sep: "，", sep2: "、",
     m_no_images: "找不到可用的圖片（支援 PNG / JPEG / WebP / GIF）",
@@ -319,6 +335,10 @@ const I18N = {
     c_clear_list: "要清除清單內 {n} 張圖片的快取嗎？", c_edited_list: "\n其中 {e} 張有你手動修改的結果，無法復原。",
     m_cache_cleared: "已清除 {n} 筆快取", m_cache_cleared_list: "；清單內 {n} 張圖片的結果也已清除，需要重新辨識",
     kd_text: "輸入 Anthropic API key（儲存於本機 ~/.mathtran）", kd_save: "儲存", kd_cancel: "取消",
+    kd_model: "辨識用的模型", kd_model_hint: "從清單挑選；選「自訂」可輸入其他模型 ID（需支援圖片輸入）。換模型後，已辨識過的圖片仍用快取結果；要用新模型重辨，請勾選「忽略快取」。清空 = 預設（{def}）。",
+    kd_model_locked: "目前由環境變數 MATHTRAN_MODEL 指定（{model}），在這裡改不會生效。",
+    mdl_custom: "自訂模型 ID…", mdl_claude_haiku_5_5: "輕量、快", mdl_claude_sonnet_5_5: "預設", mdl_claude_opus_5_5: "較強", mdl_claude_fable_5_2: "最強",
+    m_model_saved: "已儲存辨識模型：{model}",
     m_key_saved: "已儲存 API key",
     tb_click: "（點擊切換）",
     tb_lang_system: "語言：跟隨系統", tb_lang_zh: "語言：繁體中文", tb_lang_en: "語言：English",
@@ -351,7 +371,7 @@ const I18N = {
     row_chk_title: "Check (for batch recognition / export)",
     bd_run: "Recognizing…", bd_queued: "Queued", bd_err: "Failed", bd_edit: "Edited", bd_cache: "Cached", bd_ok: "Recognized", bd_idle: "Not recognized",
     ready: "Ready",
-    h_key_ok: "API key ✓", h_key_bad: "⚠ No API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ tectonic not found",
+    h_key_ok: "API key ✓", h_key_bad: "⚠ No API key", h_tec_ok: "tectonic ✓", h_tec_bad: "⚠ tectonic not found", h_model: "Model: {model}", h_model_tip: "Model used for recognition (change it with the key icon at the top right)",
     scope_sel: "Current", scope_chk: "Checked", scope_all: "All",
     sep: ", ", sep2: ", ",
     m_no_images: "No usable images found (PNG / JPEG / WebP / GIF are supported)",
@@ -401,6 +421,10 @@ const I18N = {
     m_cache_cleared_list: "; the results of {n} images in the list were cleared too and need to be recognized again",
     m_cache_cleared_list_one: "; the result of 1 image in the list was cleared too and needs to be recognized again",
     kd_text: "Enter your Anthropic API key (stored locally in ~/.mathtran)", kd_save: "Save", kd_cancel: "Cancel",
+    kd_model: "Recognition model", kd_model_hint: "Pick from the list, or choose “Custom” to type another model ID (it must accept image input). After changing the model, images that were already recognized keep their cached result; tick “Ignore cache” to recognize them again with the new model. Empty = default ({def}).",
+    kd_model_locked: "Set by the MATHTRAN_MODEL environment variable ({model}); changing it here has no effect.",
+    mdl_custom: "Custom model ID…", mdl_claude_haiku_5_5: "light, fast", mdl_claude_sonnet_5_5: "default", mdl_claude_opus_5_5: "stronger", mdl_claude_fable_5_2: "strongest",
+    m_model_saved: "Recognition model saved: {model}",
     m_key_saved: "API key saved",
     tb_click: " (click to switch)",
     tb_lang_system: "Language: follow system", tb_lang_zh: "Language: Traditional Chinese", tb_lang_en: "Language: English",
@@ -783,13 +807,39 @@ function loadMathLive() {
   });
   return mlLoading;
 }
-// MathLive 沒有自動換行的選項：它把整條公式排成一行、超出欄位的部分藏起來（只隨游標捲動）。
-// 這裡在它的 shadow DOM 裡加一段樣式，讓最上層的各項可以像文字一樣折行，欄位高度跟著變高。
-const GFX_WRAP_CSS = `.ML__content { overflow: visible !important; height: auto !important }
-  .ML__latex { display: block !important; white-space: normal !important; width: 100% !important }
-  .ML__latex > .ML__base { display: inline !important }`;
+// 長公式不折行（折行後的公式很難辨識，分數、根號還會疊在一起），改成水平捲動：
+// MathLive 本來就把整條公式排成一行、超出的部分藏起來（只隨游標捲動），這裡在它的 shadow DOM 裡
+// 加一段樣式讓水平捲軸顯示出來，也可以用滑鼠拖曳捲動
+const GFX_SCROLL_CSS = `.ML__content { overflow-x: auto !important; overflow-y: hidden !important }`;
+// MathLive 內建的 zh-tw 翻譯缺了「插入」子選單與幾個提示（會退回英文），這裡補上；範例算式（-template）不用翻
+const GFX_ZHTW = {
+  "tooltip.cut to clipboard": "剪下到剪貼簿", "tooltip.paste from clipboard": "從剪貼簿貼上", "tooltip.menu": "選單",
+  "menu.insert": "插入", "menu.insert.abs": "絕對值", "menu.insert.nth-root": "n 次方根", "menu.insert.log-base": "以 a 為底的對數",
+  "menu.insert.heading-calculus": "微積分", "menu.insert.derivative": "導數", "menu.insert.nth-derivative": "n 階導數",
+  "menu.insert.integral": "積分", "menu.insert.sum": "求和", "menu.insert.product": "連乘積",
+  "menu.insert.heading-complex-numbers": "複數", "menu.insert.modulus": "模", "menu.insert.argument": "輻角",
+  "menu.insert.real-part": "實部", "menu.insert.imaginary-part": "虛部", "menu.insert.conjugate": "共軛複數",
+  "menu.copy-as-typst": "複製為 Typst",
+};
+// MathLive 輸出的 LaTeX 要整理後才寫回：
+//  1. 空的儲存格（例如新增列、新增欄之後）會輸出成 \placeholder{}，那是 MathLive 自己的指令，KaTeX 和 LaTeX 都不認得，要拿掉（有內容的留下內容）
+//  2. 它把整條公式輸出成一行，原本在每個 \\ 後面的換行都不見了；在每個 \\（含 \\[1em]）後面補回換行，LaTeX 文字才讀得下去
+function gfxNormalize(latex) {
+  return latex
+    .replace(/\\placeholder(?:\[[^\]]*\])?\{([^{}]*)\}/g, "$1")
+    .replace(/\\\\(\[[^\]]*\])?[ \t]*(?=\S)/g, (m, opt) => "\\\\" + (opt || "") + "\n")
+    .replace(/(\\begin\{[^{}]+\}(?:\{[^{}]*\})?)[ \t]*(?=\S)/g, "$1\n")   // 環境的開頭 / 結尾也各占一行，和手寫的習慣一致
+    .replace(/(?<=\S)[ \t]*(?=\\end\{)/g, "\n")
+    .replace(/[ \t]+$/gm, "").replace(/\s+$/, "");
+}
+// 圖形編輯器的選單、虛擬鍵盤文字跟著介面語言（MathLive 內建 zh-tw；其他語言一律用英文）
+function gfxLocale() {
+  const M = window.MathLive?.MathfieldElement || window.MathfieldElement;
+  if (M) M.locale = LANG === "zh-TW" ? "zh-tw" : "en";
+}
 function gfxPush() {
   if (!mathfield) return;
+  gfxLocale();
   const it = cur();
   mathfield.disabled = !it;
   mathfield.setValue(it && it.latex != null ? it.latex.replace(CJK_RUN, "\\text{$&}") : "", { silenceNotifications: true });
@@ -801,11 +851,14 @@ async function setGfx(on) {
       await loadMathLive();
       const M = window.MathLive?.MathfieldElement || window.MathfieldElement;
       M.fontsDirectory = "/vendor/mathlive/fonts"; M.soundsDirectory = null;
+      M.strings = { "zh-tw": GFX_ZHTW };   // 與內建的 zh-tw 合併（只補缺的）
+      gfxLocale();
       mathfield = document.createElement("math-field");
+      mathfield.placeholderSymbol = "   ";   // 空白儲存格不畫 ▢ 方框（改成留白，和切換模式後重新載入的外觀一致；選取時仍會反白）
       mathfield.mathVirtualKeyboardPolicy = "manual";   // 欄位旁的鍵盤按鈕才會開，不自動彈出
-      mathfield.addEventListener("input", () => applyEdit(mathfield.getValue("latex")));
+      mathfield.addEventListener("input", () => applyEdit(gfxNormalize(mathfield.getValue("latex"))));
       $("gfxBox").append(mathfield);
-      const st = document.createElement("style"); st.textContent = GFX_WRAP_CSS; mathfield.shadowRoot.append(st);
+      const st = document.createElement("style"); st.textContent = GFX_SCROLL_CSS; mathfield.shadowRoot.append(st);
       status("ready");
     } catch { setErr(t("gfx_fail")); $("gfxBtn").disabled = false; return; }
     $("gfxBtn").disabled = false;
@@ -1143,18 +1196,51 @@ $("cacheClearAll").onclick = () => clearCache("all");
 $("cacheClearList").onclick = () => clearCache("list");
 
 // ====================== API key / 健康狀態 ======================
-$("keyBtn").onclick = () => $("keyDlg").showModal();
+let modelInfo = null;   // /api/models 的結果（開啟對話框時更新）
+async function loadModels() {
+  try { modelInfo = await (await apiFetch("/api/models")).json(); } catch (e) { return; }
+  const m = modelInfo;
+  const opts = m.choices.map(id => {
+    const o = document.createElement("option"); o.value = id;
+    const d = t("mdl_" + id.replace(/[^a-z0-9]/g, "_")); o.textContent = d.startsWith("mdl_") ? id : id + "（" + d + "）";
+    return o;
+  });
+  const custom = document.createElement("option"); custom.value = ""; custom.textContent = t("mdl_custom");
+  $("modelSel").replaceChildren(...opts, custom);
+  const known = m.choices.includes(m.current);
+  $("modelSel").value = known ? m.current : "";
+  $("modelIn").value = known ? "" : m.current; $("modelIn").hidden = known;
+  $("modelSel").disabled = $("modelIn").disabled = m.locked;
+  $("modelHint").textContent = m.locked ? t("kd_model_locked", { model: m.current }) : t("kd_model_hint", { def: m.default });
+}
+$("modelSel").onchange = () => { $("modelIn").hidden = $("modelSel").value !== ""; if (!$("modelIn").hidden) $("modelIn").focus(); };
+$("keyBtn").onclick = () => { $("keyDlg").showModal(); loadModels(); };
 $("keySave").onclick = async () => {
   const k = $("keyIn").value.trim();
-  if (k) await apiFetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: k }) });
-  $("keyIn").value = ""; health();
-  if (k) status("m_key_saved", null, "ok");
+  const body = {};
+  if (k) body.api_key = k;
+  if (modelInfo && !modelInfo.locked) {
+    const m = $("modelSel").value || $("modelIn").value.trim();   // 選「自訂」就用輸入框的內容
+    if ((m || modelInfo.default) !== modelInfo.current) body.model = m;   // 清空 = 恢復預設
+  }
+  $("keyIn").value = "";
+  if (Object.keys(body).length) {
+    try {
+      const r = await apiFetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error((await r.json()).detail || r.status);
+      if (body.api_key) status("m_key_saved", null, "ok");
+      if (body.model !== undefined) status("m_model_saved", { model: body.model || modelInfo.default }, "ok");
+    } catch (e) { setErr(e.message); }
+  }
+  health();
 };
 async function health() {
   try {
     const h = await (await apiFetch("/api/health")).json();
     const item = (ok, good, bad) => ok ? t(good) : `<span class="bad">${t(bad)}</span>`;
-    $("health").innerHTML = item(h.api_key, "h_key_ok", "h_key_bad") + "　" + item(h.tectonic, "h_tec_ok", "h_tec_bad");
+    const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+    const model = h.model ? `<span title="${esc(t("h_model_tip"))}">${esc(t("h_model", { model: h.model }))}</span>　` : "";
+    $("health").innerHTML = model + item(h.api_key, "h_key_ok", "h_key_bad") + "　" + item(h.tectonic, "h_tec_ok", "h_tec_bad");
     const dot = $("keyBtn").querySelector(".dot"); if (dot) dot.hidden = !!h.api_key;   // 還沒設定 API key：圖示右上角顯示紅點
   } catch (e) { /* 伺服器暫時沒回應就維持原狀 */ }
 }

@@ -98,7 +98,7 @@ From left to right: language, theme, API key. The three rows show three combinat
 |---|---|---|
 | Language | globe → "中" → "En" | Follow system → Traditional Chinese → English. "Follow system" uses Traditional Chinese on a Chinese system and English otherwise |
 | Theme | half-black-half-white circle → sun → moon | Follow system → light → dark. "Follow system" follows the operating system's dark / light mode |
-| API key | key | Opens the key dialog; **a red dot on the key means no key is set yet** |
+| API key | key | Opens the settings dialog to enter the API key and **choose the recognition model**; **a red dot on the key means no key is set yet** |
 
 Hovering a button shows its current state, and the status bar confirms the change (for example "Language: English").
 
@@ -120,6 +120,22 @@ Everything is drawn in flat, solid colors — there are no gradients. The text c
 ![English UI](https://raw.githubusercontent.com/codemee/mathtran/main/docs/images/app-en.png)
 
 **Your choices are remembered**: language, theme, thumbnail size and export formats are stored in `~/.mathtran/config.json`, shared by the desktop and web versions, and survive restarts.
+
+#### Recognition model
+
+Besides the API key, the dialog behind the key icon has a **Recognition model** drop-down:
+
+| Option | Note |
+|---|---|
+| `claude-haiku-5-5` | light, fast |
+| `claude-sonnet-5-5` | **default** |
+| `claude-opus-5-5` | stronger |
+| `claude-fable-5-2` | strongest |
+| Custom model ID… | type another model ID (it must accept image input, e.g. a newly released model) |
+
+- Clear the custom field and save = back to the default
+- After changing the model, **images that were already recognized keep their cached result**; tick "Ignore cache" to recognize them again with the new model
+- If the `MATHTRAN_MODEL` environment variable is set it takes priority, and the drop-down is locked with an explanation
 
 ### Desktop / web UI
 
@@ -158,7 +174,7 @@ Edit a formula without knowing LaTeX syntax: above the editor there are two swit
 
 ![Virtual keyboard](https://raw.githubusercontent.com/codemee/mathtran/main/docs/images/editor-visual-keyboard.png)
 
-- A formula that is too long **wraps onto the next line** instead of being cut off
+- A formula that is too long gets a **horizontal scrollbar** under the field (drag it, or just move the caret and it scrolls into view); formulas are not wrapped, because a wrapped formula is hard to read
 - Both ways of editing stay **in sync**: changes in the visual editor go straight to the LaTeX text box and the preview, and are saved to the cache
 - Merely switching does not mark the result as "edited"; the visual editor may tidy the source into equivalent standard LaTeX (for example `\frac12` → `\frac{1}{2}`)
 - Works fully offline ([MathLive](https://mathlive.io/) is bundled and loaded the first time you click)
@@ -257,7 +273,7 @@ The **status bar** at the bottom of the window shows what is happening:
 | Area | Content |
 |---|---|
 | Left | Progress, success messages (e.g. "Saved: C:\\…\\formula.pdf"), errors (in red) |
-| Right | `API key ✓`, `tectonic ✓`; a red warning when something is missing |
+| Right | `Model: claude-sonnet-5-5` (the model used for recognition), `API key ✓`, `tectonic ✓`; a red warning when something is missing |
 
 > The UI labels are currently in Traditional Chinese.
 
@@ -270,6 +286,7 @@ The **status bar** at the bottom of the window shows what is happening:
 | `mathtran convert image.png -o out.pdf [--no-cache]` | Recognize and export in one step |
 | `mathtran cache [--clear]` | Show the number of cached results and where they live; `--clear` empties it |
 | `mathtran config --api-key KEY` | Save the API key (stored under `~/.mathtran/`) |
+| `mathtran config --model ID` | Set the recognition model (default `claude-sonnet-5-5`; empty = default); the `MATHTRAN_MODEL` environment variable also works and takes priority |
 | `mathtran serve [--port 8765]` | Start the web UI |
 | `mathtran gui` | Start the desktop window |
 

@@ -71,8 +71,9 @@ def put_settings(body: SettingsIn):
         raise HTTPException(400, tr("bad_setting", key=e))
 
 
-class KeyIn(BaseModel):
-    api_key: str
+class ConfigIn(BaseModel):
+    api_key: str | None = None
+    model: str | None = None   # 空字串 = 恢復預設模型
 
 
 @app.get("/api/health")
@@ -81,12 +82,31 @@ def health():
         "api_key": bool(config.get_api_key()),
         "tectonic": render.tectonic_available(),   # 含安裝包附帶的 tectonic
         "version": __version__,
+        "model": config.get_model(),   # 目前辨識用的模型（狀態列右側顯示）
+    }
+
+
+@app.get("/api/models")
+def models():
+    """辨識用的模型：目前使用的、預設值、建議清單，以及是否被環境變數 MATHTRAN_MODEL 鎖定。"""
+    return {
+        "current": config.get_model(),
+        "default": config.DEFAULT_MODEL,
+        "choices": list(config.MODEL_CHOICES),
+        "locked": config.model_locked(),
     }
 
 
 @app.post("/api/config")
-def set_key(body: KeyIn):
-    config.save_api_key(body.api_key.strip())
+def set_config(body: ConfigIn):
+    """儲存 API key 和 / 或辨識模型（沒帶的項目維持原狀）。"""
+    if body.model is not None:
+        try:
+            config.save_model(body.model)
+        except ValueError as e:
+            raise HTTPException(400, tr("bad_setting", key=e))
+    if body.api_key is not None and body.api_key.strip():
+        config.save_api_key(body.api_key.strip())
     return {"ok": True}
 
 

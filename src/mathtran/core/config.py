@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".mathtran" / "config.json"
@@ -46,8 +47,32 @@ def save_api_key(key: str) -> None:
     _write(data)
 
 
+# 辨識可用的模型（需要支援圖片輸入）。介面上以下拉選單列出，也可以自己輸入其他模型 ID（例如之後新發布的模型）
+MODEL_CHOICES = ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5-2")
+_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}")
+
+
 def get_model() -> str:
     return os.environ.get("MATHTRAN_MODEL") or _load().get("model") or DEFAULT_MODEL
+
+
+def model_locked() -> bool:
+    """模型是否由環境變數 MATHTRAN_MODEL 指定（環境變數優先，設定檔的值不會生效）。"""
+    return bool(os.environ.get("MATHTRAN_MODEL"))
+
+
+def save_model(model: str) -> str:
+    """儲存要用的模型；空字串 = 恢復預設。格式不合法就丟 ValueError("model")。"""
+    model = model.strip()
+    if model and not _MODEL_ID.fullmatch(model):
+        raise ValueError("model")
+    data = _load()
+    if model and model != DEFAULT_MODEL:
+        data["model"] = model
+    else:
+        data.pop("model", None)
+    _write(data)
+    return get_model()
 
 
 def _clean_setting(key: str, value):

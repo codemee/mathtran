@@ -5,7 +5,8 @@ c = TestClient(app)
 
 def test_index_and_health():
     assert c.get("/").status_code == 200
-    assert "tectonic" in c.get("/api/health").json()
+    h = c.get("/api/health").json()
+    assert "tectonic" in h and h["model"]
 
 def test_export_svg():
     r = c.post("/api/export/svg", json={"latex": "x^2+y^2=z^2"})

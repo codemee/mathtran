@@ -85,13 +85,24 @@ def convert_cmd(
 
 
 @app.command("config")
-def config_cmd(api_key: Optional[str] = typer.Option(None, "--api-key")):
-    """儲存 Anthropic API key。"""
-    if api_key:
-        config.save_api_key(api_key)
+def config_cmd(
+    api_key: Optional[str] = typer.Option(None, "--api-key"),
+    model: Optional[str] = typer.Option(None, "--model", help="辨識用的模型 ID；空字串 = 預設"),
+):
+    """儲存 Anthropic API key 與辨識模型（不帶選項就顯示目前狀態）。"""
+    if api_key or model is not None:
+        if api_key:
+            config.save_api_key(api_key)
+        if model is not None:
+            try:
+                config.save_model(model)
+            except ValueError as e:
+                typer.echo(tr("bad_setting", key=e), err=True)
+                raise typer.Exit(1)
         typer.echo(tr("config_saved", path=config.CONFIG_PATH))
     else:
         typer.echo(tr("key_set" if config.get_api_key() else "key_unset"))
+    typer.echo(tr("model_now", model=config.get_model()))
 
 
 @app.command("serve")

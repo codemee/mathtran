@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-27
+
+圖形編輯器的一輪修正，並可以選擇辨識用的模型。 / A round of visual-editor fixes, and you can now choose the recognition model.
+
+### 繁體中文
+
+- **可以選擇辨識用的模型**：API key 對話框新增「辨識用的模型」下拉選單（Haiku 5.5 / Sonnet 5.5（預設）/ Opus 5.5 / Fable 5.2，或自訂模型 ID）；命令列新增 `mathtran config --model`；環境變數 `MATHTRAN_MODEL` 仍優先（對話框會鎖住並說明）
+- 狀態列右側顯示**目前辨識用的模型**（例如 `模型：claude-sonnet-5-5`），更換模型後立即更新
+- 修正桌面版圖形編輯器**無法用滑鼠點選位置**的問題（可以點公式移動游標、拖曳選取）：桌面視窗預設禁止選取文字，圖形編輯器因此不處理滑鼠；0.1.3、0.1.4 都有這個問題
+- 圖形編輯器的長公式**不再折行**，改成顯示**水平捲軸**：折行後的公式很難辨識，含分數、根號的公式折行後上下兩行還會疊在一起（0.1.3、0.1.4 的問題）
+- 修正圖形編輯器新增列 / 欄後，LaTeX 裡多出 `\placeholder{}`（預覽會壞、也無法編譯），而且原本的換行全部消失的問題：現在空的儲存格會清成空白（圖形編輯器裡也不再畫 ▢ 方框，與切換模式後重新載入的外觀一致；游標所在的空格仍會反白），並在每個 `\\`、`\begin{…}`、`\end{…}` 後面補回換行
+- 圖形編輯器的選單、虛擬鍵盤與提示**跟著介面語言**（繁體中文 / English）；MathLive 內建的繁中翻譯缺的「插入」子選單等項目已補上
+- 主視窗**不再整頁捲動**：左右兩個窗格各自使用捲軸（右邊內容多時用自己的捲軸），狀態列固定在底部；視窗很窄、上下堆疊時才整頁捲動
+
+### English
+
+- **Choose the recognition model**: the API key dialog gets a "Recognition model" drop-down (Haiku 5.5 / Sonnet 5.5 (default) / Opus 5.5 / Fable 5.2, or a custom model ID); new `mathtran config --model`; the `MATHTRAN_MODEL` environment variable still takes priority (the dialog locks and says why)
+- The right side of the status bar shows the **model currently used for recognition** (for example `Model: claude-sonnet-5-5`) and updates as soon as you change it
+- Fixed the desktop visual editor **not reacting to mouse clicks** (click to place the caret, drag to select): the desktop window disables text selection by default, so the editor ignored the mouse; present in 0.1.3 and 0.1.4
+- Long formulas in the visual editor are **no longer wrapped**; the field shows a **horizontal scrollbar** instead: a wrapped formula is hard to read, and with fractions and roots the wrapped lines even overlapped (an issue in 0.1.3 and 0.1.4)
+- Fixed the visual editor leaving `\placeholder{}` in the LaTeX after adding a row / column (which broke the preview and compilation) and flattening all line breaks: empty cells are now cleaned to blanks (and no longer drawn as ▢ boxes in the visual editor, matching how they look after switching modes; the cell under the caret is still highlighted) and a line break is restored after every `\\`, `\begin{…}` and `\end{…}`
+- The visual editor's menu, virtual keyboard and tooltips **follow the interface language** (Traditional Chinese / English); the `Insert` submenu and a few other items missing from MathLive's built-in zh-TW strings are filled in
+- The main window **no longer scrolls as a whole**: the left and right panes each use their own scrollbar (the right one scrolls by itself when its content is long) and the status bar stays at the bottom; only a very narrow window, where the panes stack, scrolls as a page
+
 ## [0.1.4] - 2026-11-26
 
 ### 繁體中文
@@ -87,6 +111,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - **Three ways to use it**: desktop window, browser, command line (`mathtran ocr / render / convert / cache / config / serve / gui`)
 - **Installation**: Windows ZIP, macOS DMG (Tectonic included, nothing else to install), or `uv tool install mathtran`
 
+[0.1.5]: https://github.com/codemee/mathtran/releases/tag/v0.1.5
 [0.1.4]: https://github.com/codemee/mathtran/releases/tag/v0.1.4
 [0.1.3]: https://github.com/codemee/mathtran/releases/tag/v0.1.3
 [0.1.2]: https://github.com/codemee/mathtran/releases/tag/v0.1.2
